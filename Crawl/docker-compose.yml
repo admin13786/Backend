@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  crawler:
+    build: .
+    container_name: CrawlWorker
+    env_file:
+      - ./.env
+      - ../WorkShop/.env
+    environment:
+      - AI_NEWS_DB_PATH=/app/db/ai_news.db
+      - WORKER_PORT=6600
+    volumes:
+      - ./logs:/app/logs
+      - ./db/ai_news.db:/app/db/ai_news.db
+      - ./static/page-shots:/app/static/page-shots
+      - ./.env:/app/.env
+      - ../WorkShop/.env:/app/shared.env:ro
+    ports:
+      - "6600:6600"
+    command: ["python", "crawler_worker.py"]
+    restart: unless-stopped
+
+  monitor:
+    build: .
+    container_name: CrawlMonitor
+    env_file:
+      - ./.env
+      - ../WorkShop/.env
+    environment:
+      - AI_NEWS_DB_PATH=/app/db/ai_news.db
+      - CRAWL_LOG_PATH=/app/logs/crawl_log.txt
+      - PUSH_API_BASE=http://api:8000
+    volumes:
+      - ./logs:/app/logs
+      - ./db/ai_news.db:/app/db/ai_news.db
+      - ./static/page-shots:/app/static/page-shots
+      - ./.env:/app/.env
+      - ../WorkShop/.env:/app/shared.env:ro
+    ports:
+      - "6666:6666"
+      - "6668:6666"
+      - "6670:6666"
+    command: ["uvicorn", "monitor_api:app", "--host", "0.0.0.0", "--port", "6666"]
+    restart: unless-stopped
+
+  api:
+    build: .
+    container_name: CrawlAPI
+    env_file:
+      - ./.env
+      - ../WorkShop/.env
+    environment:
+      - AI_NEWS_DB_PATH=/app/db/ai_news.db
+    volumes:
+      - ./logs:/app/logs
+      - ./db/ai_news.db:/app/db/ai_news.db
+      - ./static/page-shots:/app/static/page-shots
+      - ./.env:/app/.env
+      - ../WorkShop/.env:/app/shared.env:ro
+    ports:
+      - "8000:8000"
+    # 默认 CMD 已是 uvicorn run_local:app:8000，这里不必覆盖
+    restart: unless-stopped

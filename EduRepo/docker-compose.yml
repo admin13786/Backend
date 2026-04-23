@@ -1,0 +1,44 @@
+services:
+  edurepo-backend:
+    build:
+      context: ./backend
+      args:
+        PYTHON_IMAGE: ${EDUREPO_PYTHON_IMAGE:-python:3.10-slim}
+        APT_MIRROR_HOST: ${EDUREPO_APT_MIRROR_HOST:-https://mirrors.aliyun.com}
+        PIP_INDEX_URL: ${EDUREPO_PIP_INDEX_URL:-https://mirrors.aliyun.com/pypi/simple}
+        INSTALL_CJK_FONT: ${EDUREPO_INSTALL_CJK_FONT:-false}
+    container_name: edurepo-backend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - CRAWL_API_BASE=${CRAWL_API_BASE:-http://host.docker.internal:8000}
+      - EDU_REPO_DATA_DIR=/app/data
+      - EDU_FONT_PATH=${EDU_FONT_PATH:-}
+      - EDUREPO_LLM_API_KEY=${EDUREPO_LLM_API_KEY:-}
+      - EDUREPO_LLM_BASE_URL=${EDUREPO_LLM_BASE_URL:-}
+      - EDUREPO_LLM_MODEL=${EDUREPO_LLM_MODEL:-}
+      - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY:-}
+      - DASHSCOPE_BASE_URL=${DASHSCOPE_BASE_URL:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
+    volumes:
+      - ./backend/data:/app/data
+    ports:
+      - "9010:9010"
+    restart: unless-stopped
+
+  edurepo-frontend:
+    build:
+      context: ./frontend
+      args:
+        NODE_IMAGE: ${EDUREPO_NODE_IMAGE:-docker.m.daocloud.io/library/node:20-alpine}
+        NGINX_IMAGE: ${EDUREPO_NGINX_IMAGE:-docker.m.daocloud.io/library/nginx:alpine}
+        NPM_REGISTRY: ${EDUREPO_NPM_REGISTRY:-https://registry.npmmirror.com}
+        VITE_PUBLIC_BASE: ${VITE_PUBLIC_BASE:-/edurepo/}
+        VITE_API_BASE: ${VITE_API_BASE:-}
+    container_name: edurepo-frontend
+    depends_on:
+      - edurepo-backend
+    ports:
+      - "5188:80"
+    restart: unless-stopped

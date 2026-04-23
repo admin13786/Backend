@@ -1,0 +1,51 @@
+FROM node:20-slim
+
+# 使用 http 镜像：slim 底座里往往尚未装好 CA，apt 访问 https 源会报 certificate is NOT trusted
+ARG APT_MIRROR=http://mirrors.aliyun.com/debian
+ARG APT_FALLBACK_MIRROR=http://mirrors.tuna.tsinghua.edu.cn/debian
+ARG NPM_REGISTRY=https://registry.npmmirror.com
+
+RUN set -eux; \
+    . /etc/os-release; \
+    suite="${VERSION_CODENAME:-bookworm}"; \
+    write_debian_sources() { \
+      main_uri="$1"; \
+      sec_uri="${main_uri%/debian}/debian-security"; \
+      { \
+        printf '%s\n' \
+          "Types: deb" \
+          "URIs: ${main_uri}" \
+          "Suites: ${suite} ${suite}-updates" \
+          "Components: main" \
+          "Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg" \
+          "" \
+          "Types: deb" \
+          "URIs: ${sec_uri}" \
+          "Suites: ${suite}-security" \
+          "Components: main" \
+          "Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg"; \
+      } > /etc/apt/sources.list.d/debian.sources; \
+    }; \
+    bootstrap_ok=0; \
+    for main_uri in "${APT_MIRROR}" "${APT_FALLBACK_MIRROR}" "http://deb.debian.org/debian"; do \
+      write_debian_sources "${main_uri}" || continue; \
+      apt-get update || continue; \
+      apt-get install -y --no-install-recommends ca-certificates || continue; \
+      bootstrap_ok=1; \
+      break; \
+    done; \
+    test "${bootstrap_ok}" -eq 1; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+    bash \
+    git \
+    g++ \
+    make \
+    python3 \
+    ripgrep \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN npm config set registry "${NPM_REGISTRY}" && npm install -g @anthropic-ai/claude-code
+
+WORKDIR /workspace
+CMD ["bash"]

@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent-Do</title>
+  <style>
+    :root {
+      --bg: #090b10;
+      --bg-accent: #111724;
+      --panel: rgba(15, 19, 28, 0.92);
+      --panel-alt: rgba(19, 24, 35, 0.92);
+      --panel-soft: rgba(27, 34, 47, 0.9);
+      --border: rgba(118, 139, 168, 0.2);
+      --border-strong: rgba(125, 211, 252, 0.32);
+      --text: #f3f6fb;
+      --muted: #92a0b7;
+      --accent: #5eead4;
+      --accent-strong: #2dd4bf;
+      --danger: #f97316;
+      --danger-strong: #ea580c;
+      --button-dark: #232b39;
+      --user: linear-gradient(135deg, rgba(45, 212, 191, 0.18), rgba(45, 212, 191, 0.08));
+      --assistant: linear-gradient(135deg, rgba(96, 165, 250, 0.16), rgba(96, 165, 250, 0.06));
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(45, 212, 191, 0.12), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(96, 165, 250, 0.14), transparent 32%),
+        linear-gradient(180deg, #090b10 0%, #0d1118 100%);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(74, 86, 107, 0.42) transparent;
+    }
+
+    *::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    *::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    *::-webkit-scrollbar-thumb {
+      background: rgba(74, 86, 107, 0.55);
+      border-radius: 999px;
+      border: 1px solid rgba(8, 11, 16, 0.65);
+    }
+
+    *::-webkit-scrollbar-thumb:hover {
+      background: rgba(92, 108, 133, 0.72);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      outline: none;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      background: rgba(17, 22, 32, 0.98);
+      color: var(--text);
+      padding: 12px 14px;
+      transition: border-color 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--border-strong);
+      box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.12);
+    }
+
+    select {
+      appearance: none;
+      background-image:
+        linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+        linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+      background-position:
+        calc(100% - 22px) calc(50% - 2px),
+        calc(100% - 16px) calc(50% - 2px);
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+      padding-right: 36px;
+    }
+
+    textarea {
+      resize: none;
+      min-height: 112px;
+      line-height: 1.55;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      padding: 10px 14px;
+      color: #06131a;
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      transition: transform 0.12s ease, filter 0.12s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.04);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+      transform: none;
+      filter: none;
+    }
+
+    button.secondary {
+      color: var(--text);
+      background: var(--button-dark);
+      border: 1px solid var(--border);
+    }
+
+    button.warn {
+      color: #fff5eb;
+      background: linear-gradient(135deg, var(--danger), var(--danger-strong));
+    }
+
+    .app-shell {
+      height: 100vh;
+      padding: 10px;
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      gap: 10px;
+    }
+
+    .panel {
+      min-height: 0;
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .sidebar {
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      gap: 10px;
+      padding: 12px;
+    }
+
+    .brand h1 {
+      margin: 0 0 6px;
+      font-size: 28px;
+      letter-spacing: -0.04em;
+    }
+
+    .brand p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .sidebar-card {
+      padding: 10px;
+      border-radius: 16px;
+      background: var(--panel-alt);
+      border: 1px solid rgba(118, 139, 168, 0.14);
+    }
+
+    .field + .field {
+      margin-top: 12px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .session-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .session-actions button {
+      padding: 8px 10px;
+      min-height: 34px;
+      font-size: 13px;
+      border-radius: 12px;
+    }
+
+    .session-list {
+      min-height: 0;
+      overflow: auto;
+      padding-right: 4px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .session-list::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+      display: none;
+    }
+
+    .session-item {
+      padding: 11px 12px;
+      margin-bottom: 8px;
+      border-radius: 16px;
+      border: 1px solid transparent;
+      background: rgba(18, 24, 35, 0.95);
+      cursor: pointer;
+      transition: border-color 0.12s ease, transform 0.12s ease, background 0.12s ease;
+    }
+
+    .session-item:hover {
+      transform: translateY(-1px);
+      border-color: rgba(125, 211, 252, 0.16);
+    }
+
+    .session-item.active {
+      border-color: rgba(125, 211, 252, 0.36);
+      background: linear-gradient(135deg, rgba(45, 212, 191, 0.14), rgba(96, 165, 250, 0.08));
+    }
+
+    .session-item strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .session-item span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      min-height: 0;
+      padding: 12px;
+      gap: 10px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: end;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .session-meta h2 {
+      margin: 0 0 4px;
+      font-size: 26px;
+      letter-spacing: -0.04em;
+    }
+
+    .session-meta p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      word-break: break-all;
+    }
+
+    .topbar-controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(160px, 200px));
+      gap: 10px;
+    }
+
+    .content-grid {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(320px, 0.92fr) minmax(420px, 1.08fr);
+      gap: 10px;
+    }
+
+    .pane {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: var(--panel-alt);
+      overflow: hidden;
+    }
+
+    .pane-head {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .pane-head h3 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: -0.02em;
+    }
+
+    .pane-head small,
+    .preview-meta {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .messages {
+      min-height: 0;
+      overflow: auto;
+      padding: 6px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .messages::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+      display: none;
+    }
+
+    .message {
+      display: inline-block;
+      width: auto;
+      max-width: min(82%, 760px);
+      padding: 1px 6px;
+      border-radius: 7px;
+      line-height: 1.08;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      border: none;
+      box-shadow: none;
+    }
+
+    .message.user {
+      align-self: flex-end;
+      background: var(--user);
+    }
+
+    .message.assistant {
+      align-self: flex-start;
+      background: var(--assistant);
+    }
+
+    .message .meta {
+      display: none;
+    }
+
+    .message-text {
+      display: inline;
+    }
+
+    .preview-pane {
+      background: var(--panel-soft);
+    }
+
+    .preview-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: nowrap;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    .preview-actions button {
+      width: auto;
+      min-width: 88px;
+      padding: 8px 10px;
+      min-height: 34px;
+      font-size: 13px;
+      border-radius: 12px;
+    }
+
+    .preview-frame-wrap {
+      position: relative;
+      min-height: 0;
+      height: 100%;
+      min-height: 360px;
+      background: #05070b;
+      overflow: hidden;
+    }
+
+    .preview-frame {
+      display: none;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: white;
+      transform-origin: top left;
+    }
+
+    .preview-empty {
+      display: grid;
+      place-items: center;
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      padding: 28px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    .composer {
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-rows: auto auto;
+      gap: 8px;
+    }
+
+    .composer-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .composer-head strong {
+      font-size: 14px;
+      letter-spacing: -0.01em;
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: right;
+      line-height: 1.5;
+    }
+
+    .composer-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 132px;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .composer-row button {
+      height: 100%;
+      min-height: 104px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .composer-hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    @media (max-width: 1240px) {
+      .app-shell {
+        grid-template-columns: 280px minmax(0, 1fr);
+      }
+
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 920px) {
+      html,
+      body {
+        overflow: auto;
+      }
+
+      .app-shell {
+        height: auto;
+        min-height: 100vh;
+        grid-template-columns: 1fr;
+      }
+
+      .workspace {
+        grid-template-rows: auto auto auto;
+      }
+
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar-controls {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .content-grid {
+        min-height: auto;
+      }
+
+      .messages,
+      .preview-frame-wrap {
+        min-height: 280px;
+      }
+
+      .composer-row {
+        grid-template-columns: 1fr;
+      }
+
+      .composer-row button {
+        min-height: 56px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <aside class="panel sidebar">
+      <section class="brand">
+        <h1>Agent-Do</h1>
+        <p>Claude Code 多会话工作台。左侧管理 session，右侧同时查看对话、预览和发送面板。</p>
+      </section>
+
+      <section class="sidebar-card">
+        <div class="field">
+          <label for="userId">User ID</label>
+          <input id="userId" value="demo-user" />
+        </div>
+        <div class="field">
+          <label for="sessionTitle">Session Title</label>
+          <input id="sessionTitle" placeholder="例如：推箱子原型" />
+        </div>
+        <div class="session-actions">
+          <button id="createSessionBtn">创建 Session</button>
+          <button id="refreshSessionsBtn" class="secondary">刷新列表</button>
+          <button id="deleteSessionBtn" class="warn" disabled>删除当前 Session</button>
+        </div>
+      </section>
+
+      <section class="session-list" id="sessionList"></section>
+    </aside>
+
+    <section class="panel workspace">
+      <header class="topbar">
+        <div class="session-meta">
+          <h2 id="chatTitle">未选择 Session</h2>
+          <p id="chatSubtitle">先选择左侧一个 session，或者创建新的 session。</p>
+        </div>
+        <div class="topbar-controls">
+          <div class="field" style="margin: 0;">
+            <label for="runtimeProfile">Runtime</label>
+            <select id="runtimeProfile"></select>
+          </div>
+          <div class="field" style="margin: 0;">
+            <label for="model">Model</label>
+            <select id="model"></select>
+          </div>
+        </div>
+      </header>
+
+      <div class="content-grid">
+        <section class="pane">
+          <div class="pane-head">
+            <h3>对话</h3>
+            <small id="messageSummary">消息会显示在这里。</small>
+          </div>
+          <div class="messages" id="messages"></div>
+        </section>
+
+        <section class="pane preview-pane">
+          <div class="pane-head">
+            <div>
+              <h3>在线预览</h3>
+              <div class="preview-meta" id="previewMeta">选择一个 session 后即可查看可预览内容。</div>
+            </div>
+            <div class="preview-actions">
+              <button id="previewStartBtn">启动/刷新</button>
+              <button id="previewStopBtn" class="warn">停止运行</button>
+            </div>
+          </div>
+          <div class="preview-frame-wrap">
+            <div class="preview-empty" id="previewEmpty">当前 session 还没有可预览内容。</div>
+            <iframe class="preview-frame" id="previewFrame"></iframe>
+          </div>
+        </section>
+      </div>
+
+      <footer class="composer">
+        <div class="composer-head">
+          <strong>Prompt</strong>
+          <div class="status" id="status">准备就绪。</div>
+        </div>
+        <div class="composer-row">
+          <textarea id="prompt" placeholder="例如：请在当前目录写一个带碰撞检测和计分的打砖块小游戏，并确保可以直接预览。"></textarea>
+          <button id="sendBtn">发送</button>
+        </div>
+        <p class="composer-hint">快捷键：Ctrl/Command + Enter 发送。对话区和预览区会独立滚动，不再挤占发送栏。</p>
+      </footer>
+    </section>
+  </main>
+
+  <script>
+    const sessionListEl = document.getElementById("sessionList");
+    const messagesEl = document.getElementById("messages");
+    const statusEl = document.getElementById("status");
+    const chatTitleEl = document.getElementById("chatTitle");
+    const chatSubtitleEl = document.getElementById("chatSubtitle");
+    const messageSummaryEl = document.getElementById("messageSummary");
+    const promptEl = document.getElementById("prompt");
+    const modelEl = document.getElementById("model");
+    const runtimeProfileEl = document.getElementById("runtimeProfile");
+    const userIdEl = document.getElementById("userId");
+    const sessionTitleEl = document.getElementById("sessionTitle");
+    const createSessionBtn = document.getElementById("createSessionBtn");
+    const refreshSessionsBtn = document.getElementById("refreshSessionsBtn");
+    const deleteSessionBtn = document.getElementById("deleteSessionBtn");
+    const sendBtn = document.getElementById("sendBtn");
+    const previewMetaEl = document.getElementById("previewMeta");
+    const previewFrameWrapEl = document.querySelector(".preview-frame-wrap");
+    const previewFrameEl = document.getElementById("previewFrame");
+    const previewEmptyEl = document.getElementById("previewEmpty");
+    const previewStartBtn = document.getElementById("previewStartBtn");
+    const previewStopBtn = document.getElementById("previewStopBtn");
+
+    const modelOptionsByProfile = {
+      default: ["sonnet"],
+      aliyun: ["qwen3-coder-next"]
+    };
+
+    let currentSessionId = null;
+    let streaming = false;
+    let currentRuntime = null;
+    let previewScaleTimers = [];
+    let runtimeProfiles = {
+      default_runtime_profile: "aliyun",
+      items: [
+        { id: "default", label: "Claude Default", default_model: "sonnet", configured: true },
+        { id: "aliyun", label: "Claude via Aliyun", default_model: "qwen3-coder-next", configured: true }
+      ]
+    };
+
+    function setStatus(text) {
+      statusEl.textContent = text;
+    }
+
+    function setPreviewMeta(text) {
+      previewMetaEl.textContent = text;
+    }
+
+    function setCurrentSessionState(sessionId) {
+      currentSessionId = sessionId;
+      deleteSessionBtn.disabled = !sessionId || streaming;
+    }
+
+    function clearPreviewScaleTimers() {
+      for (const timer of previewScaleTimers) {
+        clearTimeout(timer);
+      }
+      previewScaleTimers = [];
+    }
+
+    function resetPreviewFrameScale() {
+      previewFrameEl.style.position = "absolute";
+      previewFrameEl.style.inset = "0";
+      previewFrameEl.style.left = "0";
+      previewFrameEl.style.top = "0";
+      previewFrameEl.style.width = "100%";
+      previewFrameEl.style.height = "100%";
+      previewFrameEl.style.transform = "none";
+      previewFrameEl.style.transformOrigin = "top left";
+    }
+
+    function syncPreviewScale() {
+      if (!previewFrameEl.dataset.currentSrc || previewFrameEl.hidden) {
+        return;
+      }
+
+      const wrapWidth = previewFrameWrapEl.clientWidth;
+      const wrapHeight = previewFrameWrapEl.clientHeight;
+      if (!wrapWidth || !wrapHeight) {
+        return;
+      }
+
+      try {
+        const doc = previewFrameEl.contentDocument;
+        const root = doc?.documentElement;
+        const body = doc?.body;
+        if (!root || !body) {
+          resetPreviewFrameScale();
+          return;
+        }
+
+        const contentWidth = Math.max(
+          root.scrollWidth,
+          body.scrollWidth,
+          root.offsetWidth,
+          body.offsetWidth,
+          root.clientWidth,
+          body.clientWidth
+        );
+        const contentHeight = Math.max(
+          root.scrollHeight,
+          body.scrollHeight,
+          root.offsetHeight,
+          body.offsetHeight,
+          root.clientHeight,
+          body.clientHeight
+        );
+
+        if (contentWidth <= wrapWidth + 2 && contentHeight <= wrapHeight + 2) {
+          resetPreviewFrameScale();
+          return;
+        }
+
+        const scale = Math.min(wrapWidth / contentWidth, wrapHeight / contentHeight);
+        const scaledWidth = contentWidth * scale;
+        const scaledHeight = contentHeight * scale;
+
+        previewFrameEl.style.position = "absolute";
+        previewFrameEl.style.inset = "auto";
+        previewFrameEl.style.left = `${Math.max((wrapWidth - scaledWidth) / 2, 0)}px`;
+        previewFrameEl.style.top = `${Math.max((wrapHeight - scaledHeight) / 2, 0)}px`;
+        previewFrameEl.style.width = `${contentWidth}px`;
+        previewFrameEl.style.height = `${contentHeight}px`;
+        previewFrameEl.style.transform = `scale(${scale})`;
+      } catch {
+        resetPreviewFrameScale();
+      }
+    }
+
+    function schedulePreviewScaleSync() {
+      clearPreviewScaleTimers();
+      for (const delay of [0, 100, 300, 800, 1600]) {
+        previewScaleTimers.push(window.setTimeout(syncPreviewScale, delay));
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    }
+
+    function renderMessages(items, transientAssistantText = "") {
+      const blocks = items.map((item) => {
+        const meta = item.role === "user" ? "User" : "Claude";
+        return `
+          <article class="message ${item.role}">
+            <span class="meta">${meta}</span>
+            <span class="message-text">${escapeHtml(item.content)}</span>
+          </article>
+        `;
+      });
+
+      if (transientAssistantText) {
+        blocks.push(`
+          <article class="message assistant">
+            <span class="meta">Claude</span>
+            <span class="message-text">${escapeHtml(transientAssistantText)}</span>
+          </article>
+        `);
+      }
+
+      messagesEl.innerHTML = blocks.join("");
+      messageSummaryEl.textContent = `${items.length}${transientAssistantText ? "+" : ""} 条消息`;
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function resetWorkspaceView() {
+      setCurrentSessionState(null);
+      chatTitleEl.textContent = "未选择 Session";
+      chatSubtitleEl.textContent = "先选择左侧一个 session，或者创建新的 session。";
+      messageSummaryEl.textContent = "消息会显示在这里。";
+      messagesEl.innerHTML = "";
+      clearPreview("先创建一个 session，再生成页面或项目。");
+    }
+
+    async function fetchJson(url, options) {
+      const response = await fetch(url, options);
+      if (!response.ok) {
+        let detail = response.statusText;
+        try {
+          const body = await response.json();
+          detail = body.detail || detail;
+        } catch {
+          detail = await response.text();
+        }
+        throw new Error(detail);
+      }
+      return response.json();
+    }
+
+    function renderRuntimeOptions() {
+      const current = runtimeProfileEl.value || runtimeProfiles.default_runtime_profile;
+      runtimeProfileEl.innerHTML = runtimeProfiles.items.map((item) => {
+        const suffix = item.configured ? "" : "（未配置）";
+        const disabled = item.configured ? "" : "disabled";
+        return `<option value="${item.id}" ${disabled}>${escapeHtml(item.label || item.id)}${suffix}</option>`;
+      }).join("");
+
+      const canUseCurrent = runtimeProfiles.items.some((item) => item.id === current && item.configured);
+      runtimeProfileEl.value = canUseCurrent ? current : (runtimeProfiles.items.find((item) => item.configured)?.id || runtimeProfiles.default_runtime_profile);
+    }
+
+    function renderModelOptions(force = false) {
+      const profileId = runtimeProfileEl.value || runtimeProfiles.default_runtime_profile || "aliyun";
+      const fallback = runtimeProfiles.items.find((item) => item.id === profileId)?.default_model || "sonnet";
+      const options = modelOptionsByProfile[profileId] || [fallback];
+      const current = modelEl.value;
+
+      modelEl.innerHTML = options.map((item) => `<option value="${item}">${item}</option>`).join("");
+      if (!force && options.includes(current)) {
+        modelEl.value = current;
+      } else {
+        modelEl.value = options[0];
+      }
+    }
+
+    async function loadRuntimeProfiles() {
+      const data = await fetchJson("/runtime-profiles");
+      runtimeProfiles = data;
+      renderRuntimeOptions();
+      renderModelOptions(true);
+    }
+
+    async function loadSessions() {
+      const data = await fetchJson("/sessions");
+      const items = data.items || [];
+      sessionListEl.innerHTML = items.map((item) => `
+        <article class="session-item ${item.id === currentSessionId ? "active" : ""}" data-id="${item.id}">
+          <strong>${escapeHtml(item.title || `Session ${item.id.slice(0, 8)}`)}</strong>
+          <span>${escapeHtml(item.user_id)} · ${escapeHtml(item.last_active_at)}</span>
+        </article>
+      `).join("");
+
+      document.querySelectorAll(".session-item").forEach((el) => {
+        el.addEventListener("click", () => selectSession(el.dataset.id));
+      });
+
+      return items;
+    }
+
+    async function loadMessages(sessionId) {
+      const data = await fetchJson(`/sessions/${sessionId}/messages`);
+      renderMessages(data.items || []);
+      return data.items || [];
+    }
+
+    function clearPreview(message) {
+      currentRuntime = null;
+      clearPreviewScaleTimers();
+      previewFrameEl.hidden = true;
+      previewFrameEl.style.display = "none";
+      previewFrameEl.removeAttribute("src");
+      previewFrameEl.dataset.currentSrc = "";
+      resetPreviewFrameScale();
+      previewEmptyEl.style.display = "grid";
+      previewEmptyEl.textContent = message;
+      previewStopBtn.disabled = true;
+    }
+
+    function applyRuntimeInfo(info, { reload = false } = {}) {
+      currentRuntime = info;
+      const modeLabel = info.mode === "node" ? "Node 运行容器" : info.mode === "static" ? "静态页面" : "不可预览";
+      const statusLabel = {
+        ready: "可直接预览",
+        running: "运行中",
+        stopped: "已停止",
+        starting: "启动中",
+        failed: "启动失败",
+        not_configured: "未配置运行命令",
+        not_available: "不可预览"
+      }[info.status] || info.status;
+      const extra = info.entry_file ? `入口：${info.entry_file}` : (info.last_error || "当前还没有可预览内容。");
+      setPreviewMeta(`${modeLabel} · ${statusLabel} · ${extra}`);
+
+      previewStopBtn.disabled = !(info.mode === "node" && ["running", "starting", "failed", "stopped"].includes(info.status));
+
+      if (info.can_preview && info.preview_url) {
+        const src = reload ? `${info.preview_url}${info.preview_url.includes("?") ? "&" : "?"}t=${Date.now()}` : info.preview_url;
+        previewEmptyEl.style.display = "none";
+        previewFrameEl.hidden = false;
+        previewFrameEl.style.display = "block";
+        resetPreviewFrameScale();
+        if (reload || previewFrameEl.dataset.currentSrc !== info.preview_url) {
+          previewFrameEl.src = src;
+          previewFrameEl.dataset.currentSrc = info.preview_url;
+        } else {
+          schedulePreviewScaleSync();
+        }
+        return;
+      }
+
+      clearPreview(info.last_error || (info.mode === "node" ? "点击“启动/刷新”运行项目。" : "当前 session 还没有可预览内容。"));
+    }
+
+    async function loadRuntime(sessionId, options = {}) {
+      const info = await fetchJson(`/sessions/${sessionId}/runtime`);
+      applyRuntimeInfo(info, options);
+      return info;
+    }
+
+    async function selectSession(sessionId) {
+      setCurrentSessionState(sessionId);
+      const session = await fetchJson(`/sessions/${sessionId}`);
+      chatTitleEl.textContent = session.title || `Session ${session.id.slice(0, 8)}`;
+      chatSubtitleEl.textContent = session.workspace_path;
+      await loadSessions();
+      await loadMessages(sessionId);
+      await loadRuntime(sessionId);
+    }
+
+    async function createSession() {
+      const user_id = userIdEl.value.trim() || "demo-user";
+      const title = sessionTitleEl.value.trim() || null;
+      const session = await fetchJson("/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id, title })
+      });
+      sessionTitleEl.value = "";
+      await loadSessions();
+      await selectSession(session.id);
+      setStatus(`已创建 session: ${session.id}`);
+    }
+
+    function parseSseBlock(block) {
+      const lines = block.split("\n");
+      let event = "message";
+      const dataLines = [];
+
+      for (const line of lines) {
+        if (line.startsWith("event:")) event = line.slice(6).trim();
+        if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
+      }
+
+      if (!dataLines.length) return null;
+      return { event, data: JSON.parse(dataLines.join("\n")) };
+    }
+
+    async function sendMessage() {
+      if (streaming) return;
+
+      try {
+        if (!currentSessionId) {
+          await createSession();
+        }
+
+        const content = promptEl.value.trim();
+        if (!content) return;
+
+        streaming = true;
+        sendBtn.disabled = true;
+        createSessionBtn.disabled = true;
+        refreshSessionsBtn.disabled = true;
+        deleteSessionBtn.disabled = true;
+        previewStartBtn.disabled = true;
+
+        const items = await loadMessages(currentSessionId);
+        items.push({ role: "user", content });
+        renderMessages(items);
+        promptEl.value = "";
+        setStatus("Claude 正在执行...");
+
+        const response = await fetch(`/sessions/${currentSessionId}/messages/stream`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content,
+            runtime_profile: runtimeProfileEl.value || runtimeProfiles.default_runtime_profile || "aliyun",
+            model: modelEl.value || "sonnet",
+            max_turns: 8
+          })
+        });
+
+        if (!response.ok || !response.body) {
+          const text = await response.text();
+          throw new Error(text || "流式请求失败");
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let assistantText = "";
+
+        while (true) {
+          const { value, done } = await reader.read();
+          buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+
+          let boundary = buffer.indexOf("\n\n");
+          while (boundary !== -1) {
+            const block = buffer.slice(0, boundary).trim();
+            buffer = buffer.slice(boundary + 2);
+            boundary = buffer.indexOf("\n\n");
+
+            if (!block) continue;
+            const parsed = parseSseBlock(block);
+            if (!parsed) continue;
+
+            if (parsed.event === "chunk") {
+              assistantText += parsed.data.text || "";
+              renderMessages(items, assistantText);
+              setStatus("Claude 正在输出...");
+            }
+
+            if (parsed.event === "done") {
+              const changed = parsed.data.changed_files || [];
+              const detail = changed.length ? `变更文件：${changed.join(", ")}` : "未检测到 workspace 文件变更";
+              setStatus(`执行完成，耗时 ${parsed.data.duration_ms} ms；${detail}`);
+            }
+
+            if (parsed.event === "error") {
+              setStatus(`执行失败：${parsed.data.message}`);
+            }
+          }
+
+          if (done) break;
+        }
+
+        await loadMessages(currentSessionId);
+        await loadSessions();
+        await loadRuntime(currentSessionId, { reload: true });
+      } catch (error) {
+        setStatus(`请求失败：${error.message}`);
+      } finally {
+        streaming = false;
+        sendBtn.disabled = false;
+        createSessionBtn.disabled = false;
+        refreshSessionsBtn.disabled = false;
+        deleteSessionBtn.disabled = !currentSessionId;
+        previewStartBtn.disabled = false;
+      }
+    }
+
+    createSessionBtn.addEventListener("click", () => {
+      createSession().catch((error) => setStatus(`创建失败：${error.message}`));
+    });
+
+    refreshSessionsBtn.addEventListener("click", async () => {
+      try {
+        const items = await loadSessions();
+        if (!currentSessionId && items.length) {
+          await selectSession(items[0].id);
+        }
+        setStatus("Session 列表已刷新。");
+      } catch (error) {
+        setStatus(`刷新失败：${error.message}`);
+      }
+    });
+
+    deleteSessionBtn.addEventListener("click", async () => {
+      if (!currentSessionId || streaming) {
+        return;
+      }
+
+      const confirmed = window.confirm("确定要删除当前 Session 吗？这会同时删除消息记录、工作区文件和运行容器。");
+      if (!confirmed) {
+        return;
+      }
+
+      const deletingId = currentSessionId;
+
+      try {
+        deleteSessionBtn.disabled = true;
+        setStatus("正在删除当前 Session...");
+        await fetchJson(`/sessions/${deletingId}`, { method: "DELETE" });
+        const items = await loadSessions();
+        const nextSession = items.find((item) => item.id !== deletingId);
+        if (nextSession) {
+          await selectSession(nextSession.id);
+        } else {
+          resetWorkspaceView();
+        }
+        setStatus("当前 Session 已删除。");
+      } catch (error) {
+        deleteSessionBtn.disabled = !currentSessionId;
+        setStatus(`删除失败：${error.message}`);
+      }
+    });
+
+    sendBtn.addEventListener("click", () => {
+      sendMessage();
+    });
+
+    previewStartBtn.addEventListener("click", async () => {
+      if (!currentSessionId) {
+        setStatus("请先选择或创建一个 session。");
+        return;
+      }
+
+      try {
+        setStatus("正在准备预览...");
+        const runtime = await fetchJson(`/sessions/${currentSessionId}/runtime`);
+        if (runtime.mode === "static") {
+          applyRuntimeInfo(runtime, { reload: true });
+          setStatus("静态页面已刷新预览。");
+          return;
+        }
+
+        if (runtime.mode === "node" && runtime.status === "running") {
+          applyRuntimeInfo(runtime, { reload: true });
+          setStatus("已刷新正在运行的预览。");
+          return;
+        }
+
+        const started = await fetchJson(`/sessions/${currentSessionId}/runtime/start`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ restart: false })
+        });
+        applyRuntimeInfo(started, { reload: true });
+        setStatus(started.status === "running" ? "项目已启动，可在右侧预览。" : `当前状态：${started.status}`);
+      } catch (error) {
+        clearPreview(`预览启动失败：${error.message}`);
+        setStatus(`预览启动失败：${error.message}`);
+      }
+    });
+
+    previewStopBtn.addEventListener("click", async () => {
+      if (!currentSessionId) return;
+      try {
+        const stopped = await fetchJson(`/sessions/${currentSessionId}/runtime/stop`, {
+          method: "POST"
+        });
+        applyRuntimeInfo(stopped);
+        setStatus("运行中的预览已停止。");
+      } catch (error) {
+        setStatus(`停止预览失败：${error.message}`);
+      }
+    });
+
+    previewFrameEl.addEventListener("load", () => {
+      schedulePreviewScaleSync();
+      if (previewFrameEl.dataset.currentSrc) {
+        setStatus("预览内容已加载。");
+      }
+    });
+
+    window.addEventListener("resize", () => {
+      schedulePreviewScaleSync();
+    });
+
+    runtimeProfileEl.addEventListener("change", () => {
+      renderModelOptions(true);
+    });
+
+    promptEl.addEventListener("keydown", (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+        sendMessage();
+      }
+    });
+
+    Promise.all([loadRuntimeProfiles(), loadSessions()])
+      .then(async ([_, items]) => {
+        if (items.length) {
+          await selectSession(items[0].id);
+        } else {
+          resetWorkspaceView();
+        }
+      })
+      .catch((error) => {
+        setStatus(`初始化失败：${error.message}`);
+      });
+  </script>
+</body>
+</html>

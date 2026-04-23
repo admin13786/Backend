@@ -1,0 +1,62 @@
+# ---- Stage 1: Base ----
+ARG APK_MIRROR=mirrors.aliyun.com
+FROM node:22-alpine3.19 AS base
+
+ARG APK_MIRROR
+
+    RUN sed -i "s/dl-cdn.alpinelinux.org/${APK_MIRROR}/g" /etc/apk/repositories && \
+        apk add --no-cache libc6-compat
+    RUN npm i -g pnpm@10.28.0
+    
+    WORKDIR /app
+    
+    # ---- Stage 2: Dependencies ----
+    FROM base AS deps
+
+    ARG NPM_REGISTRY=https://registry.npmmirror.com
+    
+    # Native build tools for sharp, @napi-rs/canvas
+    RUN apk add --no-cache python3 build-base g++ cairo-dev pango-dev jpeg-dev giflib-dev librsvg-dev
+    
+    COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+    COPY packages/ ./packages/
+    
+    RUN pnpm config set registry ${NPM_REGISTRY} && \
+        pnpm install --frozen-lockfile
+    
+    # ---- Stage 3: Builder ----
+    FROM base AS builder
+    
+    COPY --from=deps /app/node_modules ./node_modules
+    COPY --from=deps /app/packages ./packages
+    COPY . .
+    
+    RUN pnpm build
+    
+    # ---- Stage 4: Runner ----
+    FROM node:22-alpine3.19 AS runner
+
+    ARG APK_MIRROR
+    
+    WORKDIR /app
+    
+    ENV NODE_ENV=production
+    ENV HOSTNAME=0.0.0.0
+    ENV PORT=3000
+    
+    RUN sed -i "s/dl-cdn.alpinelinux.org/${APK_MIRROR}/g" /etc/apk/repositories && \
+        apk add --no-cache libc6-compat cairo pango jpeg giflib librsvg
+    
+    RUN addgroup --system --gid 1001 nodejs && \
+        adduser --system --uid 1001 nextjs
+    
+    COPY --from=builder /app/public ./public
+    COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+    COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+    
+    USER nextjs
+    
+    EXPOSE 3000
+    
+    CMD ["node", "server.js"]
+    
