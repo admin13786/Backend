@@ -1,0 +1,165 @@
+services:
+  crawl-api:
+    build:
+      context: ../Crawl
+    container_name: aiedu-crawl-api
+    env_file:
+      - ./.env
+    environment:
+      AI_NEWS_DB_PATH: /app/db/ai_news.db
+    volumes:
+      - ../Crawl/logs:/app/logs
+      - ../Crawl/db/ai_news.db:/app/db/ai_news.db
+      - ../Crawl/static/page-shots:/app/static/page-shots
+      - ./.env:/app/.env:ro
+      - ./.env:/app/shared.env:ro
+    ports:
+      - "${CRAWL_API_PORT:-8000}:8000"
+    restart: unless-stopped
+
+  crawl-monitor:
+    build:
+      context: ../Crawl
+    container_name: aiedu-crawl-monitor
+    env_file:
+      - ./.env
+    environment:
+      AI_NEWS_DB_PATH: /app/db/ai_news.db
+      CRAWL_LOG_PATH: /app/logs/crawl_log.txt
+      PUSH_API_BASE: http://crawl-api:8000
+    volumes:
+      - ../Crawl/logs:/app/logs
+      - ../Crawl/db/ai_news.db:/app/db/ai_news.db
+      - ../Crawl/static/page-shots:/app/static/page-shots
+      - ./.env:/app/.env:ro
+      - ./.env:/app/shared.env:ro
+    ports:
+      - "${CRAWL_MONITOR_PORT:-6670}:6666"
+    command: ["uvicorn", "monitor_api:app", "--host", "0.0.0.0", "--port", "6666"]
+    depends_on:
+      - crawl-api
+    restart: unless-stopped
+
+  agent-do:
+    build:
+      context: ../Agent-Do
+      dockerfile: Dockerfile
+      args:
+        APT_MIRROR: ${AGENT_DO_APT_MIRROR:-https://mirrors.aliyun.com/debian}
+        PIP_INDEX_URL: ${AGENT_DO_PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}
+    container_name: aiedu-agent-do
+    environment:
+      AGENT_DATA_ROOT: /data
+      AGENT_DATA_HOST_ROOT: ${AGENT_DATA_HOST_ROOT:-}
+      CLAUDE_DOCKER_IMAGE: ${CLAUDE_DOCKER_IMAGE:-claude-runtime:latest}
+      DEFAULT_RUNTIME_PROFILE: ${DEFAULT_RUNTIME_PROFILE:-aliyun}
+      DEFAULT_CLAUDE_MODEL: ${DEFAULT_CLAUDE_MODEL:-sonnet}
+      ALIYUN_ANTHROPIC_BASE_URL: ${ALIYUN_ANTHROPIC_BASE_URL:-https://dashscope.aliyuncs.com/apps/anthropic}
+      ALIYUN_ANTHROPIC_API_KEY: ${ALIYUN_ANTHROPIC_API_KEY:-${DASHSCOPE_API_KEY:-}}
+      ALIYUN_ANTHROPIC_MODEL: ${ALIYUN_ANTHROPIC_MODEL:-qwen3-coder-next}
+      APP_RUNTIME_IMAGE: ${APP_RUNTIME_IMAGE:-node:20-alpine}
+      APP_RUNTIME_NPM_REGISTRY: ${APP_RUNTIME_NPM_REGISTRY:-https://registry.npmmirror.com}
+      APP_RUNTIME_MEMORY: ${APP_RUNTIME_MEMORY:-2g}
+      APP_RUNTIME_CPUS: ${APP_RUNTIME_CPUS:-1}
+      APP_RUNTIME_INTERNAL_PORT: ${APP_RUNTIME_INTERNAL_PORT:-3000}
+      APP_RUNTIME_START_TIMEOUT_SECONDS: ${APP_RUNTIME_START_TIMEOUT_SECONDS:-30}
+      APP_RUNTIME_IDLE_TIMEOUT_SECONDS: ${APP_RUNTIME_IDLE_TIMEOUT_SECONDS:-3600}
+      APP_RUNTIME_IDLE_SWEEP_SECONDS: ${APP_RUNTIME_IDLE_SWEEP_SECONDS:-120}
+      CLAUDE_TIMEOUT_SECONDS: ${CLAUDE_TIMEOUT_SECONDS:-900}
+      CLAUDE_MEMORY: ${CLAUDE_MEMORY:-2g}
+      CLAUDE_CPUS: ${CLAUDE_CPUS:-1}
+      CLAUDE_IDLE_TIMEOUT_SECONDS: ${CLAUDE_IDLE_TIMEOUT_SECONDS:-900}
+      CLAUDE_IDLE_SWEEP_SECONDS: ${CLAUDE_IDLE_SWEEP_SECONDS:-60}
+      AGENTDO_ORPHAN_SWEEP_SECONDS: ${AGENTDO_ORPHAN_SWEEP_SECONDS:-300}
+      AGENT_SESSION_RETENTION_SECONDS: ${AGENT_SESSION_RETENTION_SECONDS:-0}
+      AGENT_SESSION_RETENTION_SWEEP_SECONDS: ${AGENT_SESSION_RETENTION_SWEEP_SECONDS:-1800}
+    volumes:
+      - ${DOCKER_SOCK_PATH:-/var/run/docker.sock}:/var/run/docker.sock
+      - ../Agent-Do/data:/data
+    ports:
+      - "${AGENT_DO_PORT:-18000}:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  workshop:
+    build:
+      context: ../WorkShop
+    container_name: aiedu-workshop
+    env_file:
+      - ./.env
+    environment:
+      OSS_ACCESS_KEY_ID: ${OSS_ACCESS_KEY_ID:-}
+      OSS_ACCESS_KEY_SECRET: ${OSS_ACCESS_KEY_SECRET:-}
+      OSS_BUCKET_NAME: ${OSS_BUCKET_NAME:-}
+      OSS_ENDPOINT: ${OSS_ENDPOINT:-}
+      OSS_DOMAIN: ${OSS_DOMAIN:-}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+      AGENT_DO_BASE_URL: ${AGENT_DO_BASE_URL:-http://agent-do:8000}
+      AGENT_DO_DEFAULT_MODEL: ${AGENT_DO_DEFAULT_MODEL:-sonnet}
+      AGENT_DO_MAX_TURNS: ${AGENT_DO_MAX_TURNS:-8}
+      WORKSHOP_AGENTDO_MAP_DB: /app/state/agentdo_session_map.db
+    volumes:
+      - ../WorkShop/metrics.db:/app/metrics.db
+      - ../WorkShop/state:/app/state
+      - ../Agent-Do/data:/data
+    ports:
+      - "${WORKSHOP_PORT:-5000}:5000"
+    depends_on:
+      agent-do:
+        condition: service_healthy
+    restart: unless-stopped
+
+  crawl-worker:
+    profiles: ["crawler"]
+    build:
+      context: ../Crawl
+    container_name: aiedu-crawl-worker
+    env_file:
+      - ./.env
+    environment:
+      AI_NEWS_DB_PATH: /app/db/ai_news.db
+      WORKER_PORT: 6600
+    volumes:
+      - ../Crawl/logs:/app/logs
+      - ../Crawl/db/ai_news.db:/app/db/ai_news.db
+      - ../Crawl/static/page-shots:/app/static/page-shots
+      - ./.env:/app/.env:ro
+      - ./.env:/app/shared.env:ro
+    ports:
+      - "${CRAWL_WORKER_PORT:-6600}:6600"
+    command: ["python", "crawler_worker.py"]
+    restart: unless-stopped
+
+  edurepo-backend:
+    profiles: ["edurepo"]
+    build:
+      context: ../EduRepo/backend
+      args:
+        PYTHON_IMAGE: ${EDUREPO_PYTHON_IMAGE:-python:3.10-slim}
+        APT_MIRROR_HOST: ${EDUREPO_APT_MIRROR_HOST:-https://mirrors.aliyun.com}
+        PIP_INDEX_URL: ${EDUREPO_PIP_INDEX_URL:-https://mirrors.aliyun.com/pypi/simple}
+        INSTALL_CJK_FONT: ${EDUREPO_INSTALL_CJK_FONT:-false}
+    container_name: aiedu-edurepo-backend
+    environment:
+      CRAWL_API_BASE: http://crawl-api:8000
+      EDU_REPO_DATA_DIR: /app/data
+      EDU_FONT_PATH: ${EDU_FONT_PATH:-}
+      EDUREPO_LLM_API_KEY: ${EDUREPO_LLM_API_KEY:-}
+      EDUREPO_LLM_BASE_URL: ${EDUREPO_LLM_BASE_URL:-}
+      EDUREPO_LLM_MODEL: ${EDUREPO_LLM_MODEL:-}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+      DASHSCOPE_BASE_URL: ${DASHSCOPE_BASE_URL:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+    volumes:
+      - ../EduRepo/backend/data:/app/data
+    ports:
+      - "${EDUREPO_PORT:-9010}:9010"
+    depends_on:
+      - crawl-api
+    restart: unless-stopped
