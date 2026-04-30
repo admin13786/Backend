@@ -116,3 +116,6 @@ INFO:     Uvicorn running on http://0.0.0.0:6600 (Press CTRL+C to quit)
 2026-04-30 05:46:14 [analytics] page_view page_key=workshop guest_id=
 2026-04-30 05:46:14 [analytics] page_view page_key=workshop guest_id=
 2026-04-30 05:46:48 [analytics] page_view page_key=skill_assistant guest_id=
+2026-04-30 05:46:56 [analytics] page_view page_key=workshop guest_id=
+2026-04-30 05:46:56 [analytics] page_view page_key=workshop guest_id=
+2026-04-30 05:47:06 [analytics] page_view page_key=workshop guest_id=

@@ -1,3 +1,0 @@
-FROM aiedu-agent-do:latest
-
-COPY Agent-Do/app/main.py /app/app/main.py
