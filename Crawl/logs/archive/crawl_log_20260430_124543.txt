@@ -1,0 +1,53 @@
+
+============================================================
+Worker start time: 2026-04-30 12:08:22
+Live log file: /app/logs/crawl_log.txt
+============================================================
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+[DB] connecting: /app/db/ai_news.db
+[DB] connecting: /app/db/ai_news.db
+[DB] ready
+[SCHED] Worker daily crawl started: 09:00 Asia/Shanghai business
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:6600 (Press CTRL+C to quit)
+[DB] ready
+2026-04-30 04:08:23 Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-04-30 04:08:23 Added job "business_daily_crawl" to job store "default"
+2026-04-30 04:08:23 Scheduler started
+[SCHED] Daily crawl started: 09:00 business
+[WARN] uniPush/Getui config missing; daily push will fail until env vars are set
+2026-04-30 04:10:01 [analytics] page_view page_key=openmaic guest_id=
+2026-04-30 04:11:27 [analytics] page_view page_key=channel guest_id=
+2026-04-30 04:11:28 [analytics] page_view page_key=edu_repo guest_id=
+2026-04-30 04:11:28 [analytics] page_view page_key=workshop guest_id=
+2026-04-30 04:11:28 [analytics] page_view page_key=workshop guest_id=
+2026-04-30 04:11:29 [analytics] page_view page_key=skill_assistant guest_id=
+2026-04-30 04:11:29 [analytics] page_view page_key=skill_assistant guest_id=
+2026-04-30 04:11:29 [analytics] page_view page_key=skill_assistant guest_id=
+2026-04-30 04:11:29 [analytics] page_view page_key=skill_assistant guest_id=
+2026-04-30 04:11:33 [analytics] page_view page_key=channel guest_id=
+2026-04-30 04:11:34 [analytics] page_view page_key=edu_repo guest_id=
+2026-04-30 04:11:34 [analytics] page_view page_key=workshop guest_id=
+2026-04-30 04:11:35 [analytics] page_view page_key=workshop guest_id=
+2026-04-30 04:11:35 [analytics] page_view page_key=skill_assistant guest_id=
+2026-04-30 04:11:35 [analytics] page_view page_key=skill_assistant guest_id=
+2026-04-30 04:11:35 [analytics] page_view page_key=skill_assistant guest_id=
+2026-04-30 04:11:35 [analytics] page_view page_key=skill_assistant guest_id=
+2026-04-30 04:11:36 [analytics] page_view page_key=openmaic guest_id=
+2026-04-30 04:11:37 [analytics] page_view page_key=channel guest_id=
+2026-04-30 04:11:38 [analytics] page_view page_key=edu_repo guest_id=
+2026-04-30 04:11:38 [analytics] page_view page_key=workshop guest_id=
+2026-04-30 04:11:38 [analytics] page_view page_key=workshop guest_id=
+2026-04-30 04:11:39 [analytics] page_view page_key=skill_assistant guest_id=
+2026-04-30 04:11:39 [analytics] page_view page_key=skill_assistant guest_id=
+2026-04-30 04:11:39 [analytics] page_view page_key=skill_assistant guest_id=
+2026-04-30 04:11:39 [analytics] page_view page_key=skill_assistant guest_id=
+2026-04-30 04:11:39 [analytics] page_view page_key=openmaic guest_id=
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+[DB] closed
+INFO:     Application shutdown complete.
+INFO:     Finished server process [1]
+2026-04-30 04:44:20 Scheduler has been shut down
+[DB] closed

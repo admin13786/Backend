@@ -1,0 +1,60 @@
+
+> vue-dashboard-app@1.0.0 dev
+> vite --host 0.0.0.0
+
+
+  [32m[1mVITE[22m v5.4.21[39m  [2mready in [0m[1m1507[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://10.124.4.21:[1m5173[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://172.27.80.1:[1m5173[22m/[39m
+[2m10:45:26[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/HomeView.vue[22m
+[2m10:45:45[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/HomeSlotContent.vue[22m
+[2m10:46:00[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/HomeView.vue, /src/components/AppSidebar.vue[22m
+[2m10:46:15[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/main.js[22m
+[2m10:46:55[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/main.js[22m
+[2m11:31:37[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/HomeView.vue?vue&type=style&index=0&scoped=b4e148ca&lang.css[22m
+[2m12:21:17[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/AdminMonitorRedirectView.vue[22m
+[2m12:54:46[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/WorkshopView.vue[22m
+[2m12:55:02[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/WorkshopView.vue[22m
+[2m13:03:23[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/WorkshopView.vue[22m
+[2m13:29:55[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AppSidebar.vue[22m
+[2m13:30:11[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AppSidebar.vue[22m
+[2m13:30:28[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AppSidebar.vue[22m
+[2m13:30:41[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AppSidebar.vue[22m
+[2m13:31:43[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/WorkshopView.vue[22m
+[2m13:31:57[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/WorkshopView.vue[22m
+[2m13:32:19[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/WorkshopView.vue[22m
+[2m13:32:59[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/WorkshopView.vue?vue&type=style&index=0&scoped=b5bf203f&lang.css[22m
+[2m13:34:05[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/WorkshopView.vue?vue&type=style&index=0&scoped=b5bf203f&lang.css[22m
+[2m13:34:23[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/WorkshopView.vue?vue&type=style&index=0&scoped=b5bf203f&lang.css[22m
+[2m13:34:40[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AppSidebar.vue[22m
+[2m13:35:05[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AppSidebar.vue?vue&type=style&index=0&scoped=53430c37&lang.css[22m
+[2m13:35:49[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/WorkshopView.vue?vue&type=style&index=0&scoped=b5bf203f&lang.css[22m
+[2m13:41:39[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/WorkshopView.vue[22m
+[2m13:43:27[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/WorkshopView.vue[22m
+[2m13:43:56[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/WorkshopView.vue[22m
+[2m13:44:21[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/WorkshopView.vue[22m
+[2m13:57:02[22m [36m[1m[vite][22m[39m [32mvite.config.js changed, restarting server...[39m
+[2m13:57:03[22m [36m[1m[vite][22m[39m server restarted.
+[2m14:30:50[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/NewsBriefView.vue, /src/views/NewsBriefView.vue?vue&type=style&index=0&scoped=5277fdc7&lang.css[22m
+[2m14:38:12[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AppSidebar.vue[22m
+[2m14:38:55[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/WorkshopView.vue[22m
+[2m14:46:38[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AppSidebar.vue[22m
+[2m16:11:02[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AppSidebar.vue[22m
+[2m16:11:02[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/WorkshopView.vue[22m
+[2m16:12:36[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/WorkshopView.vue[22m
+[2m16:30:43[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/router/index.js[22m
+[2m16:31:28[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/router/index.js[22m
+[2m16:31:52[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/api/analytics.js[22m
+[2m16:35:40[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AppSidebar.vue[22m
+[2m16:46:09[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/WorkshopView.vue[22m
+[2m16:50:42[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AppSidebar.vue[22m
+[2m16:59:07[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AppSidebar.vue[22m
+[2m17:21:17[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AppSidebar.vue[22m
+[2m17:35:36[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AppSidebar.vue[22m
+[2m17:36:34[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AppSidebar.vue?vue&type=style&index=0&scoped=53430c37&lang.css[22m
+[2m17:45:42[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/WorkshopView.vue[22m
+[2m20:31:59[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/config.js[22m
+[2m20:32:59[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ThemeToggle.vue, /src/components/ThemeToggle.vue?vue&type=style&index=0&scoped=fe097fd2&lang.css[22m
+[2m20:33:34[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ThemeToggle.vue, /src/components/ThemeToggle.vue?vue&type=style&index=0&scoped=fe097fd2&lang.css[22m

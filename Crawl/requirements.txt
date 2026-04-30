@@ -1,0 +1,30 @@
+# RSS 采集
+feedparser>=6.0.0
+
+# LLM API
+openai>=1.0.0
+
+# 数据库
+asyncpg>=0.30.0
+aiosqlite>=0.20.0
+
+# API 服务
+fastapi>=0.115.0
+uvicorn>=0.34.0
+
+# 抓取网页 og:image（抓取新闻首图）
+httpx
+oss2
+
+# 图片压缩（缩略图转 JPEG）
+Pillow>=10.0.0
+
+# 无头浏览器截图（网页首屏缩略图）
+playwright
+
+# 定时任务
+apscheduler>=3.10.0
+
+# 工具库
+python-dotenv>=1.0.0
+pydantic>=2.10

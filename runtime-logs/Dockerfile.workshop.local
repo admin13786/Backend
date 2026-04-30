@@ -1,0 +1,3 @@
+FROM aiedu-workshop:latest
+
+COPY WorkShop/app.py /app/app.py

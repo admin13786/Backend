@@ -1,0 +1,34 @@
+
+> openmaic@0.1.0 dev D:\Cording_V1.0\AI EDU\Backend\OpenMAIC
+> next dev "--hostname" "0.0.0.0" "--port" "3000"
+
+▲ Next.js 16.1.2 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://0.0.0.0:3000
+- Environments: .env.local
+- Experiments (use with caution):
+  · proxyClientMaxBodySize: "200mb"
+
+✓ Starting...
+Creating turbopack project { dir: 'D:\\Cording_V1.0\\AI EDU\\Backend\\OpenMAIC', testMode: true }
+✓ Ready in 3.9s
+ GET /api/health 200 in 850ms (compile: 711ms, proxy.ts: 88ms, render: 51ms)
+○ Compiling / ...
+ GET / 200 in 174ms (compile: 10ms, render: 163ms)
+[2026-04-23T05:01:49.886Z] [INFO] [ServerProviderConfig] [ServerProviderConfig] Loaded (server-providers.yml): 2 LLM, 1 TTS, 1 ASR, 0 PDF, 1 Image, 0 Video, 0 WebSearch providers
+ GET /api/server-providers 200 in 653ms (compile: 606ms, proxy.ts: 22ms, render: 25ms)
+ GET /?theme=light&appearance=light&hostTheme=light 200 in 375ms (compile: 181ms, render: 194ms)
+ GET /api/server-providers 200 in 44ms (compile: 14ms, proxy.ts: 13ms, render: 17ms)
+ GET /?theme=light&appearance=light&hostTheme=light 200 in 294ms (compile: 116ms, render: 178ms)
+ GET /api/server-providers 200 in 28ms (compile: 9ms, proxy.ts: 9ms, render: 10ms)
+ GET /?theme=light&appearance=light&hostTheme=light 200 in 571ms (compile: 203ms, render: 368ms)
+ GET /api/dialog-prefill?title=Significant-Gravitas%2FAutoGPT%EF%BC%9A%E8%AE%A9%E6%AF%8F%E4%B8%AA%E4%BA%BA%E9%83%BD%E8%83%BD%E7%94%A8AI%E3%80%81%E5%BB%BAAI&to=home 302 in 2.1s (compile: 1922ms, proxy.ts: 135ms, render: 60ms)
+ GET /?prefill=Significant-Gravitas%2FAutoGPT%EF%BC%9A%E8%AE%A9%E6%AF%8F%E4%B8%AA%E4%BA%BA%E9%83%BD%E8%83%BD%E7%94%A8AI%E3%80%81%E5%BB%BAAI 200 in 328ms (compile: 26ms, render: 302ms)
+ GET /api/server-providers 200 in 53ms (compile: 20ms, proxy.ts: 11ms, render: 21ms)
+ GET /?theme=light&appearance=light&hostTheme=light 200 in 483ms (compile: 184ms, render: 299ms)
+ GET /api/server-providers 200 in 29ms (compile: 9ms, proxy.ts: 10ms, render: 10ms)
+ GET /?theme=light&appearance=light&hostTheme=light 200 in 133ms (compile: 16ms, render: 117ms)
+ GET /api/server-providers 200 in 17ms (compile: 5ms, proxy.ts: 7ms, render: 6ms)
+ GET /?theme=light&appearance=light&hostTheme=light 200 in 135ms (compile: 13ms, render: 122ms)
+ GET /api/server-providers 200 in 28ms (compile: 7ms, proxy.ts: 9ms, render: 12ms)
+✓ Compiled in 1494ms

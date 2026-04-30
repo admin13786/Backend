@@ -1,0 +1,32 @@
+{
+  "skills": [
+    {
+      "id": "skill_107bd9eb6c1d",
+      "name": "Codex Temp Skill",
+      "slug": "codex-temp-skill",
+      "description": "temporary verification skill",
+      "is_active": false,
+      "priority": 50,
+      "mode_scope": "skill_assistant",
+      "routing_tags": [],
+      "trigger_keywords": [],
+      "exclude_keywords": [],
+      "created_at": "2026-04-23T05:59:29Z",
+      "updated_at": "2026-04-23T05:59:29Z",
+      "deleted_at": "2026-04-23T05:59:29Z",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "markdown": "# Temp Skill\n\nThis is a temporary verification skill.",
+          "changelog": "verification only",
+          "entry_file": "SKILL.md",
+          "manifest": {
+            "references": []
+          },
+          "reference_count": 0,
+          "created_at": "2026-04-23T05:59:29Z"
+        }
+      ]
+    }
+  ]
+}

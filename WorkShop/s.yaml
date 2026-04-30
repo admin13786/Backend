@@ -1,0 +1,32 @@
+edition: 3.0.0
+name: fc-upload-app
+
+resources:
+  upload-func:
+    component: fc3
+    props:
+      region: cn-hangzhou
+      functionName: upload-func
+      runtime: custom
+      code: ./
+      handler: not-used
+      timeout: 30
+      customRuntimeConfig:
+        command:
+          - python3
+          - -m
+          - uvicorn
+          - app:app
+          - --host
+          - 0.0.0.0
+          - --port
+          - "9000"
+        port: 9000
+      triggers:
+        - triggerName: httpTrigger
+          triggerType: http
+          triggerConfig:
+            authType: anonymous
+            methods:
+              - GET
+              - POST

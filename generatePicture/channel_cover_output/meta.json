@@ -1,0 +1,31 @@
+{
+  "jobs": [
+    {
+      "basename": "skill-rank-3",
+      "section": "技能提升",
+      "rank_id": 3,
+      "title": "产品经理的日常：从需求分析到原型设计的完整工作流。",
+      "image_prompt": "电影感横版构图，深灰蓝渐变背景前，一位干练的年轻产品经理侧身站立于现代开放式办公区，左手持平板展示线框图界面，右手轻点悬浮的3D交互原型，桌面散落着便签纸、马克笔与笔记本，屏幕微光映在眼镜上。柔焦虚化背景中隐约可见白板上的用户旅程图与需求优先级矩阵，光影层次丰富，材质细节真实——亚麻衬衫纹理、金属笔身反光、平板玻璃光泽。整体色调冷静理性，氛围专注而富有创造力，适配深色UI缩略图显示。",
+      "task_id": "186f3cac-af08-4c8a-8196-38a074db5041",
+      "image_url": "https://dashscope-7c2c.oss-accelerate.aliyuncs.com/1d/d7/20260320/2b8dd67a/186f3cac-af08-4c8a-8196-38a074db5041.png?Expires=1774076673&OSSAccessKeyId=LTAI5tPxpiCM2hjmWrFXrym1&Signature=liXoOYj7MIkC%2FmdFAg4rTvZBkhQ%3D"
+    },
+    {
+      "basename": "skill-rank-4",
+      "section": "技能提升",
+      "rank_id": 4,
+      "title": "Excel 进阶：数据透视表与 Power Query 实战。",
+      "image_prompt": "电影感横版封面：深蓝色渐变背景前，悬浮着一块半透明磨砂质感的笔记本电脑屏幕，屏幕中清晰显示Excel界面——左侧是结构化数据表格，右侧正动态生成一个立体感十足的数据透视表，表格边缘泛着柔光；屏幕角落可见Power Query编辑器窗口，带有流畅的数据流节点图示。桌面上散落几本翻开的技能手册、一支金属质感钢笔和一枚微缩芯片图标，光影细腻，整体色调冷静专业，细节丰富锐利，适配深色UI环境下的高清缩略图展示。",
+      "task_id": "d968d5c8-f3d5-43d7-b1f9-2dfdcdf141e9",
+      "image_url": "https://dashscope-7c2c.oss-accelerate.aliyuncs.com/1d/62/20260320/2b8dd67a/d968d5c8-f3d5-43d7-b1f9-2dfdcdf141e9.png?Expires=1774076704&OSSAccessKeyId=LTAI5tPxpiCM2hjmWrFXrym1&Signature=3oHZv993M0dz7UNJ1DUUXtgdlnE%3D"
+    },
+    {
+      "basename": "skill-rank-5",
+      "section": "技能提升",
+      "rank_id": 5,
+      "title": "PPT 设计进阶：从模板到原创的视觉表达。",
+      "image_prompt": "电影感横版封面：深灰蓝渐变背景中悬浮一张半透明磨砂质感PPT页面，页面左侧是简约现代的模板框架（浅灰色网格与占位符），右侧自然延展为原创设计——手绘风格插画图标、流畅的色块渐变、有机线条与微妙阴影，两者间以一道柔和光束衔接。页面边缘散落几枚哑光金属质感的设计工具小物：一支倾斜的钢笔、一枚微缩调色盘、一枚半透明像素图标。整体光影细腻，景深虚化营造空间层次，色调统一于低饱和莫兰迪系，高细节呈现材质肌理与光影过渡，适配深色UI缩略图显示。",
+      "task_id": "1d6fd32f-a752-4f7e-8d28-ec807d6717d9",
+      "image_url": "https://dashscope-7c2c.oss-accelerate.aliyuncs.com/1d/76/20260320/2b8dd67a/1d6fd32f-a752-4f7e-8d28-ec807d6717d9.png?Expires=1774076737&OSSAccessKeyId=LTAI5tPxpiCM2hjmWrFXrym1&Signature=fx2Y2Ebaldz76bHkOdVBHa82GdE%3D"
+    }
+  ]
+}

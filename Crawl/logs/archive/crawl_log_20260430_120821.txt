@@ -1,0 +1,21 @@
+
+============================================================
+Worker start time: 2026-04-30 11:13:55
+Live log file: /app/logs/crawl_log.txt
+============================================================
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+[DB] connecting: /app/db/ai_news.db
+[DB] ready
+[SCHED] Daily crawl started: 09:00 business
+[WARN] uniPush/Getui config missing; daily push will fail until env vars are set
+[DB] ready
+[SCHED] Worker daily crawl started: 09:00 Asia/Shanghai business
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:6600 (Press CTRL+C to quit)
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+[DB] closed
+INFO:     Application shutdown complete.
+INFO:     Finished server process [1]
+[DB] closed
