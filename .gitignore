@@ -1,6 +1,59 @@
-.venv/  
-__pycache__/  
-*.pyc  
-*.log  
-runtime-logs/  
-*.db 
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Python
+.venv/
+**/.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Node / frontend builds
+node_modules/
+**/node_modules/
+.pnpm-store/
+**/.pnpm-store/
+.next/
+**/.next/
+dist/
+**/dist/
+build/
+coverage/
+
+# Logs
+*.log
+logs/
+**/logs/
+runtime-logs/
+
+# Environment / secrets
+.env
+.env.*
+*.env
+*.local
+!.env.example
+!*.env.example
+!.env.*.example
+OpenMAIC/.env.local
+
+# Databases and runtime data
+*.db
+*.sqlite
+*.sqlite3
+Agent-Do/data/
+WorkShop/state/
+Crawl/static/page-shots/
+Crawl/static/wechat-covers/
+EduRepo/backend/data/
+OpenMAIC/data/
+
+# Archives / local exports
+*.zip
+*.tar
+*.tar.gz
+*.7z
+generatePicture/channel_cover_output/

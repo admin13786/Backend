@@ -155,6 +155,34 @@ services:
       - "${OPENMAIC_PORT:-3000}:3000"
     restart: unless-stopped
 
+  web-frontend:
+    build:
+      context: ${WEB_FRONTEND_CONTEXT:-../../Web_Frontend}
+      dockerfile: Dockerfile
+      args:
+        NODE_IMAGE: ${WEB_FRONTEND_NODE_IMAGE:-node:22-alpine}
+        NGINX_IMAGE: ${WEB_FRONTEND_NGINX_IMAGE:-nginx:stable-alpine}
+        VITE_API_BASE: ${FRONTEND_VITE_API_BASE:-}
+        VITE_USE_MOCK: ${FRONTEND_VITE_USE_MOCK:-false}
+        VITE_RANK_VIDEO_MOCK: ${FRONTEND_VITE_RANK_VIDEO_MOCK:-true}
+        VITE_RANK_WEIBO_MOCK: ${FRONTEND_VITE_RANK_WEIBO_MOCK:-false}
+        VITE_OPENMAIC_BASE_URL: ${FRONTEND_VITE_OPENMAIC_BASE_URL:-/openmaic}
+        VITE_OPENMAIC_APP_URL: ${FRONTEND_VITE_OPENMAIC_APP_URL:-}
+        VITE_OPENMAIC_PORT: ${OPENMAIC_PORT:-3000}
+        VITE_EDUREPO_VIEW_MODE: ${FRONTEND_VITE_EDUREPO_VIEW_MODE:-native}
+        VITE_EDUREPO_APP_URL: ${FRONTEND_VITE_EDUREPO_APP_URL:-}
+        VITE_MONITOR_APP_URL: ${FRONTEND_VITE_MONITOR_APP_URL:-}
+        VITE_ANDROID_APK_URL: ${FRONTEND_VITE_ANDROID_APK_URL:-/downloads/lingjing-android-latest.apk}
+    container_name: web-frontend
+    ports:
+      - "${WEB_FRONTEND_PORT:-80}:80"
+    depends_on:
+      - crawl-api
+      - agent-do
+      - workshop
+      - openmaic
+    restart: unless-stopped
+
   crawl-worker:
     profiles: ["crawler"]
     build:

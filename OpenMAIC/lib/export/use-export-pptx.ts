@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import pptxgen from 'pptxgenjs';
+import PptxGenJS from 'pptxgenjs';
 import tinycolor from 'tinycolor2';
 import { saveAs } from 'file-saver';
 import { toast } from 'sonner';
@@ -51,7 +51,7 @@ function formatHTML(html: string, ratioPx2Pt: number) {
   let bulletFlag = false;
   let indent = 0;
 
-  const slices: pptxgen.TextProps[] = [];
+  const slices: PptxGenJS.TextProps[] = [];
 
   const parse = (obj: AST[], baseStyleObj: Record<string, string> = {}) => {
     for (const item of obj) {
@@ -106,7 +106,7 @@ function formatHTML(html: string, ratioPx2Pt: number) {
           .replace(/&lt;/g, '<')
           .replace(/&amp;/g, '&')
           .replace(/\n/g, '');
-        const options: pptxgen.TextPropsOptions = {};
+        const options: PptxGenJS.TextPropsOptions = {};
 
         if (styleObj['font-size']) {
           options.fontSize = parseInt(styleObj['font-size']) / ratioPx2Pt;
@@ -143,7 +143,7 @@ function formatHTML(html: string, ratioPx2Pt: number) {
           if (styleObj['vertical-align'] === 'super') options.superscript = true;
           if (styleObj['vertical-align'] === 'sub') options.subscript = true;
         }
-        if (styleObj['text-align']) options.align = styleObj['text-align'] as pptxgen.HAlign;
+        if (styleObj['text-align']) options.align = styleObj['text-align'] as PptxGenJS.HAlign;
         if (styleObj['font-weight']) options.bold = styleObj['font-weight'] === 'bold';
         if (styleObj['font-style']) options.italic = styleObj['font-style'] === 'italic';
         if (styleObj['font-family']) options.fontFace = styleObj['font-family'];
@@ -249,7 +249,7 @@ function formatPoints(points: SvgPoints, ratioPx2Inch: number, scale = { x: 1, y
 
 // ── Shadow config ──
 
-function getShadowOption(shadow: PPTElementShadow, ratioPx2Pt: number): pptxgen.ShadowProps {
+function getShadowOption(shadow: PPTElementShadow, ratioPx2Pt: number): PptxGenJS.ShadowProps {
   const c = formatColor(shadow.color);
   const { h, v } = shadow;
 
@@ -307,7 +307,7 @@ const dashTypeMap: Record<string, string> = {
   dotted: 'sysDot',
 };
 
-function getOutlineOption(outline: PPTElementOutline, ratioPx2Pt: number): pptxgen.ShapeLineProps {
+function getOutlineOption(outline: PPTElementOutline, ratioPx2Pt: number): PptxGenJS.ShapeLineProps {
   const c = formatColor(outline?.color || '#000000');
   return {
     color: c.color,
@@ -319,7 +319,7 @@ function getOutlineOption(outline: PPTElementOutline, ratioPx2Pt: number): pptxg
 
 // ── Link config ──
 
-function getLinkOption(link: PPTElementLink, slides: Slide[]): pptxgen.HyperlinkProps | null {
+function getLinkOption(link: PPTElementLink, slides: Slide[]): PptxGenJS.HyperlinkProps | null {
   const { type, target } = link;
   if (type === 'web') return { url: target };
   if (type === 'slide') {
@@ -367,16 +367,16 @@ async function buildPptxBlob(
   ratioPx2Inch: number,
   ratioPx2Pt: number,
 ): Promise<Blob> {
-  const pptx = new pptxgen();
+  const deck = new PptxGenJS();
 
   // Set layout based on aspect ratio
-  if (viewportRatio === 0.625) pptx.layout = 'LAYOUT_16x10';
-  else if (viewportRatio === 0.75) pptx.layout = 'LAYOUT_4x3';
-  else pptx.layout = 'LAYOUT_16x9';
+  if (viewportRatio === 0.625) deck.layout = 'LAYOUT_16x10';
+  else if (viewportRatio === 0.75) deck.layout = 'LAYOUT_4x3';
+  else deck.layout = 'LAYOUT_16x9';
 
   for (let slideIdx = 0; slideIdx < slides.length; slideIdx++) {
     const slide = slides[slideIdx];
-    const pptxSlide = pptx.addSlide();
+    const pptxSlide = deck.addSlide();
 
     // ── Speaker Notes ──
     const scene = slideScenes[slideIdx];
@@ -428,7 +428,7 @@ async function buildPptxBlob(
       // ── TEXT ──
       if (el.type === 'text') {
         const textProps = formatHTML(el.content, ratioPx2Pt);
-        const options: pptxgen.TextPropsOptions = {
+        const options: PptxGenJS.TextPropsOptions = {
           x: el.left / ratioPx2Inch,
           y: el.top / ratioPx2Inch,
           w: el.width / ratioPx2Inch,
@@ -496,7 +496,7 @@ async function buildPptxBlob(
           }
         }
 
-        const options: pptxgen.ImageProps = {
+        const options: PptxGenJS.ImageProps = {
           x: el.left / ratioPx2Inch,
           y: el.top / ratioPx2Inch,
           w: el.width / ratioPx2Inch,
@@ -561,7 +561,7 @@ async function buildPptxBlob(
 
           const base64SVG = svg2Base64(svg);
 
-          const imgOptions: pptxgen.ImageProps = {
+          const imgOptions: PptxGenJS.ImageProps = {
             data: base64SVG,
             x: el.left / ratioPx2Inch,
             y: el.top / ratioPx2Inch,
@@ -594,7 +594,7 @@ async function buildPptxBlob(
           if (el.pattern) fillColor = formatColor('#00000000');
           const opacity = el.opacity === undefined ? 1 : el.opacity;
 
-          const shapeOptions: pptxgen.ShapeProps = {
+          const shapeOptions: PptxGenJS.ShapeProps = {
             x: el.left / ratioPx2Inch,
             y: el.top / ratioPx2Inch,
             w: el.width / ratioPx2Inch,
@@ -615,13 +615,13 @@ async function buildPptxBlob(
             if (linkOption) shapeOptions.hyperlink = linkOption;
           }
 
-          pptxSlide.addShape('custGeom' as pptxgen.ShapeType, shapeOptions);
+          pptxSlide.addShape('custGeom' as PptxGenJS.ShapeType, shapeOptions);
         }
 
         // Shape text overlay
         if (el.text) {
           const textProps = formatHTML(el.text.content, ratioPx2Pt);
-          const textOptions: pptxgen.TextPropsOptions = {
+          const textOptions: PptxGenJS.TextPropsOptions = {
             x: el.left / ratioPx2Inch,
             y: el.top / ratioPx2Inch,
             w: el.width / ratioPx2Inch,
@@ -641,7 +641,7 @@ async function buildPptxBlob(
 
         // Pattern overlay
         if (el.pattern) {
-          const patternOptions: pptxgen.ImageProps = {
+          const patternOptions: PptxGenJS.ImageProps = {
             x: el.left / ratioPx2Inch,
             y: el.top / ratioPx2Inch,
             w: el.width / ratioPx2Inch,
@@ -668,7 +668,7 @@ async function buildPptxBlob(
         const { minX, maxX, minY, maxY } = getElementRange(el);
         const c = formatColor(el.color);
 
-        const lineOptions: pptxgen.ShapeProps = {
+        const lineOptions: PptxGenJS.ShapeProps = {
           x: el.left / ratioPx2Inch,
           y: el.top / ratioPx2Inch,
           w: (maxX - minX) / ratioPx2Inch,
@@ -685,7 +685,7 @@ async function buildPptxBlob(
         };
         if (el.shadow) lineOptions.shadow = getShadowOption(el.shadow, ratioPx2Pt);
 
-        pptxSlide.addShape('custGeom' as pptxgen.ShapeType, lineOptions);
+        pptxSlide.addShape('custGeom' as PptxGenJS.ShapeType, lineOptions);
       }
 
       // ── CHART ──
@@ -717,7 +717,7 @@ async function buildPptxBlob(
           );
         }
 
-        const chartOptions: pptxgen.IChartOpts = {
+        const chartOptions: PptxGenJS.IChartOpts = {
           x: el.left / ratioPx2Inch,
           y: el.top / ratioPx2Inch,
           w: el.width / ratioPx2Inch,
@@ -737,7 +737,7 @@ async function buildPptxBlob(
         chartOptions.valAxisLabelFontSize = fontSize;
 
         if (el.fill || el.outline) {
-          const plotArea: pptxgen.IChartPropsFillLine = {};
+          const plotArea: PptxGenJS.IChartPropsFillLine = {};
           if (el.fill) plotArea.fill = { color: formatColor(el.fill).color };
           if (el.outline) {
             plotArea.border = {
@@ -759,29 +759,29 @@ async function buildPptxBlob(
           chartOptions.legendFontSize = fontSize;
         }
 
-        let type = pptx.ChartType.bar;
+        let type = deck.ChartType.bar;
         if (el.chartType === 'bar') {
-          type = pptx.ChartType.bar;
+          type = deck.ChartType.bar;
           chartOptions.barDir = 'col';
           if (el.options?.stack) chartOptions.barGrouping = 'stacked';
         } else if (el.chartType === 'column') {
-          type = pptx.ChartType.bar;
+          type = deck.ChartType.bar;
           chartOptions.barDir = 'bar';
           if (el.options?.stack) chartOptions.barGrouping = 'stacked';
         } else if (el.chartType === 'line') {
-          type = pptx.ChartType.line;
+          type = deck.ChartType.line;
           if (el.options?.lineSmooth) chartOptions.lineSmooth = true;
         } else if (el.chartType === 'area') {
-          type = pptx.ChartType.area;
+          type = deck.ChartType.area;
         } else if (el.chartType === 'radar') {
-          type = pptx.ChartType.radar;
+          type = deck.ChartType.radar;
         } else if (el.chartType === 'scatter') {
-          type = pptx.ChartType.scatter;
+          type = deck.ChartType.scatter;
           chartOptions.lineSize = 0;
         } else if (el.chartType === 'pie') {
-          type = pptx.ChartType.pie;
+          type = deck.ChartType.pie;
         } else if (el.chartType === 'ring') {
-          type = pptx.ChartType.doughnut;
+          type = deck.ChartType.doughnut;
           chartOptions.holeSize = 60;
         }
 
@@ -805,7 +805,7 @@ async function buildPptxBlob(
           }
         }
 
-        const tableData: pptxgen.TableRow[] = [];
+        const tableData: PptxGenJS.TableRow[] = [];
 
         const theme = el.theme;
         let themeColor: FormatColor | null = null;
@@ -817,11 +817,11 @@ async function buildPptxBlob(
 
         for (let i = 0; i < el.data.length; i++) {
           const row = el.data[i];
-          const _row: pptxgen.TableCell[] = [];
+          const _row: PptxGenJS.TableCell[] = [];
 
           for (let j = 0; j < row.length; j++) {
             const cell = row[j];
-            const cellOptions: pptxgen.TableCellProps = {
+            const cellOptions: PptxGenJS.TableCellProps = {
               colspan: cell.colspan,
               rowspan: cell.rowspan,
               bold: cell.style?.bold || false,
@@ -863,7 +863,7 @@ async function buildPptxBlob(
           if (_row.length) tableData.push(_row);
         }
 
-        const tableOptions: pptxgen.TableProps = {
+        const tableOptions: PptxGenJS.TableProps = {
           x: el.left / ratioPx2Inch,
           y: el.top / ratioPx2Inch,
           w: el.width / ratioPx2Inch,
@@ -931,7 +931,7 @@ async function buildPptxBlob(
           const base64SVG = svg2Base64(svg);
           if (!base64SVG) continue;
 
-          const latexOptions: pptxgen.ImageProps = {
+          const latexOptions: PptxGenJS.ImageProps = {
             data: base64SVG,
             x: el.left / ratioPx2Inch,
             y: el.top / ratioPx2Inch,
@@ -972,7 +972,7 @@ async function buildPptxBlob(
             reader.readAsDataURL(blob);
           });
 
-          const mediaOptions: pptxgen.MediaProps = {
+          const mediaOptions: PptxGenJS.MediaProps = {
             x: el.left / ratioPx2Inch,
             y: el.top / ratioPx2Inch,
             w: el.width / ratioPx2Inch,
@@ -1061,7 +1061,7 @@ async function buildPptxBlob(
     }
   }
 
-  return (await pptx.write({ outputType: 'blob' })) as Blob;
+  return (await deck.write({ outputType: 'blob' })) as Blob;
 }
 
 // ── Hook ──
