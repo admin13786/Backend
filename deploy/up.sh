@@ -4,11 +4,17 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 ENV_FILE="${SCRIPT_DIR}/.env"
+DB_FILE="${REPO_ROOT}/Crawl/db/ai_news.db"
 
 if [[ ! -f "${ENV_FILE}" ]]; then
   echo "Missing ${ENV_FILE}. Copy deploy/.env.example to deploy/.env and fill real values first."
   exit 1
 fi
+
+fail() {
+  echo "FAIL: $*" >&2
+  exit 1
+}
 
 set -a
 source "${ENV_FILE}"
@@ -22,8 +28,16 @@ mkdir -p \
   "${REPO_ROOT}/WorkShop/state" \
   "${REPO_ROOT}/EduRepo/backend/data"
 
-if [[ ! -f "${REPO_ROOT}/Crawl/db/ai_news.db" ]]; then
-  touch "${REPO_ROOT}/Crawl/db/ai_news.db"
+if [[ -d "${DB_FILE}" ]]; then
+  fail "Expected SQLite file at ${DB_FILE}, but found a directory. Remove or rename that directory first."
+fi
+
+if [[ -e "${DB_FILE}" && ! -f "${DB_FILE}" ]]; then
+  fail "Expected SQLite file at ${DB_FILE}, but found an unsupported path type."
+fi
+
+if [[ ! -f "${DB_FILE}" ]]; then
+  touch "${DB_FILE}"
 fi
 
 CLAUDE_IMAGE="${CLAUDE_DOCKER_IMAGE:-claude-runtime:latest}"

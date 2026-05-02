@@ -14,7 +14,7 @@ services:
       AI_NEWS_DB_PATH: /app/db/ai_news.db
     volumes:
       - ../Crawl/logs:/app/logs
-      - ../Crawl/db/ai_news.db:/app/db/ai_news.db
+      - ../Crawl/db:/app/db
       - ../Crawl/static/page-shots:/app/static/page-shots
       - ./.env:/app/.env:ro
       - ./.env:/app/shared.env:ro
@@ -39,7 +39,7 @@ services:
       PUSH_API_BASE: http://crawl-api:8000
     volumes:
       - ../Crawl/logs:/app/logs
-      - ../Crawl/db/ai_news.db:/app/db/ai_news.db
+      - ../Crawl/db:/app/db
       - ../Crawl/static/page-shots:/app/static/page-shots
       - ./.env:/app/.env:ro
       - ./.env:/app/shared.env:ro
@@ -200,7 +200,7 @@ services:
       WORKER_PORT: 6600
     volumes:
       - ../Crawl/logs:/app/logs
-      - ../Crawl/db/ai_news.db:/app/db/ai_news.db
+      - ../Crawl/db:/app/db
       - ../Crawl/static/page-shots:/app/static/page-shots
       - ./.env:/app/.env:ro
       - ./.env:/app/shared.env:ro

@@ -961,36 +961,36 @@ def _stream_agentdo_sse(
         systemPrompt=payload.system_prompt,
     )
 
-    session: dict[str, Any] | None = None
-    with trace.step("session_resolve"):
-        session = _ensure_agentdo_session(payload)
-
-    body = json.dumps(_build_agentdo_message_payload(payload)).encode("utf-8")
-    req = urllib_request.Request(
-        f"{AGENT_DO_BASE_URL}/sessions/{session['id']}/messages/stream",
-        data=body,
-        method="POST",
-        headers={
-            "Content-Type": "application/json",
-            "Accept": "text/event-stream",
-        },
-    )
-
-    intro = {
-        "type": "meta",
-        "conversationId": payload.conversation_id,
-        "agentDoSessionId": session.get("id"),
-        "workspacePath": session.get("workspace_path"),
-    }
-    yield f"data: {json.dumps(intro, ensure_ascii=False)}\n\n"
-    session_line = (
-        "Agent-Do session established; streaming Claude output via "
-        f"POST /sessions/{session['id']}/messages/stream (SSE)"
-    )
-    yield f"data: {json.dumps({'type': 'status', 'stage': 'session', 'content': session_line}, ensure_ascii=False)}\n\n"
-
-    connect_t0 = time.perf_counter()
     try:
+        session: dict[str, Any] | None = None
+        with trace.step("session_resolve"):
+            session = _ensure_agentdo_session(payload)
+
+        body = json.dumps(_build_agentdo_message_payload(payload)).encode("utf-8")
+        req = urllib_request.Request(
+            f"{AGENT_DO_BASE_URL}/sessions/{session['id']}/messages/stream",
+            data=body,
+            method="POST",
+            headers={
+                "Content-Type": "application/json",
+                "Accept": "text/event-stream",
+            },
+        )
+
+        intro = {
+            "type": "meta",
+            "conversationId": payload.conversation_id,
+            "agentDoSessionId": session.get("id"),
+            "workspacePath": session.get("workspace_path"),
+        }
+        yield f"data: {json.dumps(intro, ensure_ascii=False)}\n\n"
+        session_line = (
+            "Agent-Do session established; streaming Claude output via "
+            f"POST /sessions/{session['id']}/messages/stream (SSE)"
+        )
+        yield f"data: {json.dumps({'type': 'status', 'stage': 'session', 'content': session_line}, ensure_ascii=False)}\n\n"
+
+        connect_t0 = time.perf_counter()
         event_count = 0
         first_event_recorded = False
         with urllib_request.urlopen(req, timeout=900) as res:
@@ -1227,6 +1227,22 @@ def _stream_agentdo_sse(
         trace.finish(error=f"URLError: {exc.reason}")
         err_data = json.dumps(
             {"type": "error", "content": f"Agent-Do unreachable: {exc.reason}"},
+            ensure_ascii=False,
+        )
+        yield f"data: {err_data}\n\n"
+    except Exception as exc:
+        _trace_log(
+            "stream.unhandled_error",
+            requestId=request_id,
+            elapsedMs=round((time.perf_counter() - started) * 1000),
+            detail=str(exc),
+        )
+        trace.finish(error=str(exc))
+        err_data = json.dumps(
+            {
+                "type": "error",
+                "content": f"Workshop stream failed: {exc}",
+            },
             ensure_ascii=False,
         )
         yield f"data: {err_data}\n\n"
