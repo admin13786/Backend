@@ -6,7 +6,7 @@ services:
         PYTHON_IMAGE: ${CRAWL_PYTHON_IMAGE:-python:3.10-slim}
         APT_MIRROR: ${CRAWL_APT_MIRROR:-https://mirrors.tuna.tsinghua.edu.cn}
         PIP_INDEX_URL: ${CRAWL_PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}
-        PLAYWRIGHT_DOWNLOAD_HOST: ${CRAWL_PLAYWRIGHT_DOWNLOAD_HOST:-https://npmmirror.com/mirrors/playwright}
+        PLAYWRIGHT_DOWNLOAD_HOST: ${CRAWL_PLAYWRIGHT_DOWNLOAD_HOST:-}
     container_name: aiedu-crawl-api
     env_file:
       - ./.env
@@ -29,7 +29,7 @@ services:
         PYTHON_IMAGE: ${CRAWL_PYTHON_IMAGE:-python:3.10-slim}
         APT_MIRROR: ${CRAWL_APT_MIRROR:-https://mirrors.tuna.tsinghua.edu.cn}
         PIP_INDEX_URL: ${CRAWL_PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}
-        PLAYWRIGHT_DOWNLOAD_HOST: ${CRAWL_PLAYWRIGHT_DOWNLOAD_HOST:-https://npmmirror.com/mirrors/playwright}
+        PLAYWRIGHT_DOWNLOAD_HOST: ${CRAWL_PLAYWRIGHT_DOWNLOAD_HOST:-}
     container_name: aiedu-crawl-monitor
     env_file:
       - ./.env
@@ -59,7 +59,7 @@ services:
         PYTHON_IMAGE: ${AGENT_DO_PYTHON_IMAGE:-python:3.11-slim}
         APT_MIRROR: ${AGENT_DO_APT_MIRROR:-https://mirrors.aliyun.com/debian}
         PIP_INDEX_URL: ${AGENT_DO_PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}
-        PLAYWRIGHT_DOWNLOAD_HOST: ${AGENT_DO_PLAYWRIGHT_DOWNLOAD_HOST:-https://npmmirror.com/mirrors/playwright}
+        PLAYWRIGHT_DOWNLOAD_HOST: ${AGENT_DO_PLAYWRIGHT_DOWNLOAD_HOST:-}
     container_name: aiedu-agent-do
     environment:
       AGENT_DATA_ROOT: /data
@@ -191,7 +191,7 @@ services:
         PYTHON_IMAGE: ${CRAWL_PYTHON_IMAGE:-python:3.10-slim}
         APT_MIRROR: ${CRAWL_APT_MIRROR:-https://mirrors.tuna.tsinghua.edu.cn}
         PIP_INDEX_URL: ${CRAWL_PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}
-        PLAYWRIGHT_DOWNLOAD_HOST: ${CRAWL_PLAYWRIGHT_DOWNLOAD_HOST:-https://npmmirror.com/mirrors/playwright}
+        PLAYWRIGHT_DOWNLOAD_HOST: ${CRAWL_PLAYWRIGHT_DOWNLOAD_HOST:-}
     container_name: aiedu-crawl-worker
     env_file:
       - ./.env

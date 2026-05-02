@@ -4,7 +4,7 @@ FROM ${PYTHON_IMAGE}
 
 ARG APT_MIRROR=https://mirrors.tuna.tsinghua.edu.cn
 ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
-ARG PLAYWRIGHT_DOWNLOAD_HOST=https://npmmirror.com/mirrors/playwright
+ARG PLAYWRIGHT_DOWNLOAD_HOST=
 
 # 设置工作目录
 WORKDIR /app
@@ -51,7 +51,14 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -i "${PIP_INDEX_URL}" -r requirements.txt
 
 # 安装 Playwright 浏览器（用于 /api/page-screenshot）
-RUN PLAYWRIGHT_DOWNLOAD_HOST="${PLAYWRIGHT_DOWNLOAD_HOST}" python -m playwright install chromium
+# 默认走官方源；如果显式指定镜像源，则失败时自动回退到官方源。
+RUN set -eux; \
+    if [ -n "${PLAYWRIGHT_DOWNLOAD_HOST}" ]; then \
+      PLAYWRIGHT_DOWNLOAD_HOST="${PLAYWRIGHT_DOWNLOAD_HOST}" python -m playwright install chromium || \
+      python -m playwright install chromium; \
+    else \
+      python -m playwright install chromium; \
+    fi
 
 # 复制应用代码
 COPY . .
