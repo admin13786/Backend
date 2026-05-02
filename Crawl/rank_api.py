@@ -4,8 +4,10 @@
 """
 
 import json
+import logging
 from urllib.parse import urljoin
 
+import aiosqlite
 from fastapi import APIRouter, Header, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from db import (
@@ -24,6 +26,7 @@ from db import (
 )
 
 rank_router = APIRouter(prefix="/api", tags=["排行榜"])
+logger = logging.getLogger(__name__)
 
 
 # ========== 登录接口 ==========
@@ -84,15 +87,22 @@ def _build_user_payload(user: dict | None) -> dict:
 @rank_router.post("/auth/sessions")
 async def login(req: LoginRequest):
     username = str(req.username or "").strip()
-    user = await get_user_by_username(username)
-    if user and verify_password(req.password, user["password_hash"]):
-        token = _issue_token(username)
-        await create_session(username, token)
-        return {
-            "success": True,
-            "token": token,
-            "user": _build_user_payload(user),
-        }
+    try:
+        user = await get_user_by_username(username)
+        if user and verify_password(req.password, user["password_hash"]):
+            token = _issue_token(username)
+            await create_session(username, token)
+            return {
+                "success": True,
+                "token": token,
+                "user": _build_user_payload(user),
+            }
+    except RuntimeError as exc:
+        logger.exception("auth login unavailable for username=%s", username)
+        raise HTTPException(status_code=503, detail="认证服务未就绪，请稍后重试") from exc
+    except aiosqlite.Error as exc:
+        logger.exception("auth login database error for username=%s", username)
+        raise HTTPException(status_code=500, detail="认证数据异常，请检查 crawl-api 日志") from exc
     raise HTTPException(status_code=401, detail="用户名或密码错误")
 
 
@@ -107,18 +117,30 @@ async def register(req: RegisterRequest):
     if len(password) < 6:
         raise HTTPException(status_code=400, detail="密码至少需要 6 个字符")
 
-    exists = await get_user_by_username(username)
-    if exists:
-        raise HTTPException(status_code=409, detail="用户名已存在")
+    try:
+        exists = await get_user_by_username(username)
+        if exists:
+            raise HTTPException(status_code=409, detail="用户名已存在")
 
-    user = await create_user(username, password, display_name)
-    token = _issue_token(username)
-    await create_session(username, token)
-    return {
-        "success": True,
-        "token": token,
-        "user": _build_user_payload(user),
-    }
+        user = await create_user(username, password, display_name)
+        token = _issue_token(username)
+        await create_session(username, token)
+        return {
+            "success": True,
+            "token": token,
+            "user": _build_user_payload(user),
+        }
+    except HTTPException:
+        raise
+    except RuntimeError as exc:
+        logger.exception("auth register unavailable for username=%s", username)
+        raise HTTPException(status_code=503, detail="认证服务未就绪，请稍后重试") from exc
+    except aiosqlite.IntegrityError as exc:
+        logger.exception("auth register integrity error for username=%s", username)
+        raise HTTPException(status_code=409, detail="用户名已存在") from exc
+    except aiosqlite.Error as exc:
+        logger.exception("auth register database error for username=%s", username)
+        raise HTTPException(status_code=500, detail="认证数据异常，请检查 crawl-api 日志") from exc
 
 
 @rank_router.get("/auth/me")

@@ -48,6 +48,68 @@ def _get_database_url() -> str:
     return f"sqlite:///{_db_path}"
 
 
+async def _table_columns(table_name: str) -> set[str]:
+    cursor = await _conn.execute(f"PRAGMA table_info({table_name})")
+    return {str(row[1]) for row in await cursor.fetchall()}
+
+
+async def _add_column_if_missing(table_name: str, existing: set[str], column_name: str, definition: str) -> None:
+    if column_name in existing:
+        return
+    await _conn.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {definition}")
+    existing.add(column_name)
+
+
+async def _ensure_auth_schema() -> None:
+    user_cols = await _table_columns("app_users")
+    await _add_column_if_missing("app_users", user_cols, "password_hash", "TEXT")
+    await _add_column_if_missing("app_users", user_cols, "display_name", "TEXT DEFAULT ''")
+    await _add_column_if_missing("app_users", user_cols, "role", "TEXT DEFAULT 'user'")
+    await _add_column_if_missing("app_users", user_cols, "created_at", "TIMESTAMP")
+    await _add_column_if_missing("app_users", user_cols, "updated_at", "TIMESTAMP")
+    await _conn.execute(
+        """
+        UPDATE app_users
+        SET display_name = COALESCE(NULLIF(TRIM(display_name), ''), username)
+        WHERE COALESCE(NULLIF(TRIM(display_name), ''), '') = ''
+        """
+    )
+    await _conn.execute(
+        """
+        UPDATE app_users
+        SET created_at = COALESCE(created_at, CURRENT_TIMESTAMP),
+            updated_at = COALESCE(updated_at, CURRENT_TIMESTAMP)
+        """
+    )
+
+    session_cols = await _table_columns("app_sessions")
+    await _add_column_if_missing("app_sessions", session_cols, "username", "TEXT")
+    await _add_column_if_missing("app_sessions", session_cols, "created_at", "TIMESTAMP")
+    await _add_column_if_missing("app_sessions", session_cols, "updated_at", "TIMESTAMP")
+    await _conn.execute(
+        """
+        UPDATE app_sessions
+        SET created_at = COALESCE(created_at, CURRENT_TIMESTAMP),
+            updated_at = COALESCE(updated_at, CURRENT_TIMESTAMP)
+        """
+    )
+
+    conversation_cols = await _table_columns("workshop_conversations")
+    await _add_column_if_missing("workshop_conversations", conversation_cols, "title", "TEXT DEFAULT ''")
+    await _add_column_if_missing("workshop_conversations", conversation_cols, "data_json", "TEXT DEFAULT '{}'")
+    await _add_column_if_missing("workshop_conversations", conversation_cols, "created_at", "TIMESTAMP")
+    await _add_column_if_missing("workshop_conversations", conversation_cols, "updated_at", "TIMESTAMP")
+    await _conn.execute(
+        """
+        UPDATE workshop_conversations
+        SET title = COALESCE(NULLIF(TRIM(title), ''), id),
+            data_json = COALESCE(NULLIF(TRIM(data_json), ''), '{}'),
+            created_at = COALESCE(created_at, CURRENT_TIMESTAMP),
+            updated_at = COALESCE(updated_at, CURRENT_TIMESTAMP)
+        """
+    )
+
+
 async def init_db():
     """初始化数据库连接并建表"""
     global _conn
@@ -215,13 +277,7 @@ async def init_db():
             "ALTER TABLE news_articles ADD COLUMN brief_json TEXT DEFAULT ''"
         )
     # 加索引加速排序查询
-    user_cur = await _conn.execute("PRAGMA table_info(app_users)")
-    user_cur = await _conn.execute("PRAGMA table_info(app_users)")
-    user_cols = {row[1] for row in await user_cur.fetchall()}
-    if "role" not in user_cols:
-        await _conn.execute(
-            "ALTER TABLE app_users ADD COLUMN role TEXT DEFAULT 'user'"
-        )
+    await _ensure_auth_schema()
     await _conn.execute("""
         CREATE INDEX IF NOT EXISTS idx_articles_total_score
         ON news_articles (total_score DESC)
@@ -345,6 +401,10 @@ async def ensure_default_users():
             INSERT INTO app_users (username, password_hash, display_name, role, updated_at)
             VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(username) DO UPDATE SET
+                password_hash = CASE
+                    WHEN COALESCE(app_users.password_hash, '') = '' THEN excluded.password_hash
+                    ELSE app_users.password_hash
+                END,
                 display_name = excluded.display_name,
                 role = excluded.role,
                 updated_at = CURRENT_TIMESTAMP

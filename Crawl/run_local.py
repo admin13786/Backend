@@ -87,7 +87,8 @@ async def lifespan(app):
     try:
         await init_db()
     except Exception as e:
-        print(f"[WARN] Database init failed (ranking endpoints may be unavailable): {e}")
+        print(f"[FATAL] Database init failed: {e}")
+        raise
 
     # Start the daily crawl scheduler.
     scheduler = None
