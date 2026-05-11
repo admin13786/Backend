@@ -33,6 +33,9 @@ fi
 if [[ -n "${OPENMAIC_NODE_OPTIONS_OVERRIDE:-}" ]]; then
   export OPENMAIC_NODE_OPTIONS="${OPENMAIC_NODE_OPTIONS_OVERRIDE}"
 fi
+if [[ -n "${DEPLOY_SWAP_SIZE_MB_OVERRIDE:-}" ]]; then
+  export DEPLOY_SWAP_SIZE_MB="${DEPLOY_SWAP_SIZE_MB_OVERRIDE}"
+fi
 
 DOCKERHUB_MIRROR_PREFIX="${DOCKERHUB_MIRROR_PREFIX-docker.m.daocloud.io/library/}"
 export COMPOSE_PARALLEL_LIMIT="${COMPOSE_PARALLEL_LIMIT:-1}"
@@ -56,14 +59,37 @@ ensure_swap() {
 
   local swap_file="${DEPLOY_SWAP_FILE:-/swapfile-aiedu}"
   local swap_size_mb="${DEPLOY_SWAP_SIZE_MB:-4096}"
+  local target_bytes=$((swap_size_mb * 1024 * 1024))
+  local current_bytes=0
+  local is_active=0
 
   if swapon --show=NAME --noheadings 2>/dev/null | grep -Fxq "${swap_file}"; then
+    is_active=1
+  fi
+
+  if [[ -f "${swap_file}" ]]; then
+    current_bytes="$(stat -c %s "${swap_file}" 2>/dev/null || echo 0)"
+  fi
+
+  if [[ "${is_active}" -eq 1 && "${current_bytes}" -ge "${target_bytes}" ]]; then
+    echo "OK: swap file is active: ${swap_file} (${swap_size_mb}MB target)."
     return 0
   fi
 
   if [[ "$(id -u)" -ne 0 ]]; then
     echo "WARN: DEPLOY_SWAP_ENABLED=1 but current user is not root; skipping swap setup." >&2
     return 0
+  fi
+
+  if [[ "${is_active}" -eq 1 ]]; then
+    swapoff "${swap_file}" 2>/dev/null || {
+      echo "WARN: Failed to disable undersized swap file ${swap_file}; continuing without resizing it." >&2
+      return 0
+    }
+  fi
+
+  if [[ -f "${swap_file}" && "${current_bytes}" -lt "${target_bytes}" ]]; then
+    rm -f "${swap_file}"
   fi
 
   if [[ ! -f "${swap_file}" ]]; then
@@ -75,6 +101,10 @@ ensure_swap() {
 
   swapon "${swap_file}" 2>/dev/null || \
     echo "WARN: Failed to enable swap file ${swap_file}; continuing without swap." >&2
+
+  if swapon --show=NAME --noheadings 2>/dev/null | grep -Fxq "${swap_file}"; then
+    echo "OK: enabled swap file ${swap_file} (${swap_size_mb}MB)."
+  fi
 }
 
 ensure_swap
