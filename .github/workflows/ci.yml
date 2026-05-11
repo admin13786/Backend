@@ -1,0 +1,39 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check Python syntax
+        run: |
+          python -m py_compile \
+            Crawl/db.py \
+            Crawl/rank_api.py \
+            Crawl/run_local.py \
+            WorkShop/app.py \
+            WorkShop/metrics.py \
+            Agent-Do/app/main.py
+
+      - name: Prepare compose env
+        run: |
+          cp deploy/.env.example deploy/.env
+          sed -i 's#^AGENT_DATA_HOST_ROOT=.*#AGENT_DATA_HOST_ROOT=/tmp/aiedu-agent-data#' deploy/.env
+          sed -i 's#^WEB_FRONTEND_CONTEXT=.*#WEB_FRONTEND_CONTEXT=../missing-in-ci#' deploy/.env
+
+      - name: Validate docker compose config
+        run: docker compose -f deploy/docker-compose.yml --env-file deploy/.env --profile crawler --profile edurepo config --quiet

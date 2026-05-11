@@ -56,11 +56,22 @@ AGENT_DO_RELEASE_CLAUDE_AFTER_REQUEST = os.getenv("AGENT_DO_RELEASE_CLAUDE_AFTER
     "no",
 }
 WORKSHOP_PUBLIC_API_BASE = os.getenv("WORKSHOP_PUBLIC_API_BASE", "/api/workshop").rstrip("/")
-SESSION_MAP_DB = Path(
+
+
+def _resolve_sqlite_path(raw_path: str, default_path: Path) -> Path:
+    path = Path(str(raw_path or default_path).strip() or default_path)
+    if path.exists() and path.is_dir():
+        path = path / default_path.name
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+SESSION_MAP_DB = _resolve_sqlite_path(
     os.getenv(
         "WORKSHOP_AGENTDO_MAP_DB",
         str(Path(__file__).resolve().parent / "agentdo_session_map.db"),
-    )
+    ),
+    Path(__file__).resolve().parent / "agentdo_session_map.db",
 )
 
 app = FastAPI()
@@ -189,7 +200,8 @@ class AgentDoSessionRestoreRequest(BaseModel):
 
 
 def _session_map_conn() -> sqlite3.Connection:
-    conn = sqlite3.connect(SESSION_MAP_DB)
+    SESSION_MAP_DB.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(SESSION_MAP_DB))
     conn.row_factory = sqlite3.Row
     conn.execute(
         """

@@ -1,0 +1,57 @@
+name: Backend Deploy
+
+on:
+  workflow_run:
+    workflows: ["Backend CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: backend-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+
+    env:
+      SSH_HOST: ${{ secrets.SERVER_HOST }}
+      SSH_USER: ${{ secrets.SERVER_USER }}
+      SSH_PORT: ${{ secrets.SERVER_PORT }}
+      SSH_KEY: ${{ secrets.SERVER_PRIVATE_KEY }}
+      BACKEND_DEPLOY_PATH: ${{ secrets.BACKEND_DEPLOY_PATH }}
+
+    steps:
+      - name: Validate secrets
+        run: |
+          test -n "$SSH_HOST"
+          test -n "$SSH_USER"
+          test -n "$SSH_KEY"
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "${SSH_PORT:-22}" -H "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy backend services
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" \
+            "BACKEND_DEPLOY_PATH='${BACKEND_DEPLOY_PATH:-$HOME/Backend/deploy}' bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          cd "$BACKEND_DEPLOY_PATH"
+          git fetch origin main
+          git pull --ff-only origin main
+
+          if [ -f ./cloud-check.sh ]; then
+            bash ./cloud-check.sh
+          fi
+
+          chmod +x ./up.sh
+          ./up.sh --force-recreate crawl-api agent-do workshop openmaic
+          docker compose ps crawl-api agent-do workshop openmaic
+          REMOTE

@@ -170,10 +170,14 @@ def nested_docker_host_path(path: Path) -> Path:
 def ensure_data_dirs() -> None:
     DATA_ROOT.mkdir(parents=True, exist_ok=True)
     SESSIONS_ROOT.mkdir(parents=True, exist_ok=True)
+    if DATABASE_PATH.exists() and DATABASE_PATH.is_dir():
+        raise RuntimeError(f"Expected SQLite file at {DATABASE_PATH}, but found a directory.")
+    DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 
 def get_conn() -> sqlite3.Connection:
-    conn = sqlite3.connect(DATABASE_PATH)
+    DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(DATABASE_PATH))
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -564,6 +568,19 @@ def run_command(
         detail = completed.stderr.strip() or completed.stdout.strip() or "Command failed"
         raise HTTPException(status_code=500, detail=detail)
     return completed
+
+
+def ensure_local_docker_image(image: str) -> None:
+    completed = run_command(["docker", "image", "inspect", image], timeout=10, check=False)
+    if completed.returncode == 0:
+        return
+    raise HTTPException(
+        status_code=500,
+        detail=(
+            f"Required Docker image '{image}' is not available locally. "
+            "Run Backend/deploy/up.sh on the host to prebuild the runtime image before sending Agent-Do requests."
+        ),
+    )
 
 
 def normalize_shell_command(value) -> str | None:
@@ -1043,6 +1060,8 @@ def ensure_claude_runtime_for_session(session: dict) -> dict:
         status="starting",
         last_error=None,
     )
+
+    ensure_local_docker_image(CLAUDE_DOCKER_IMAGE)
 
     completed = run_command(
         [

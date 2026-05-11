@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 ENV_FILE="${SCRIPT_DIR}/.env"
 DB_FILE="${REPO_ROOT}/Crawl/db/ai_news.db"
+WORKSHOP_STATE_DIR="${REPO_ROOT}/WorkShop/state"
 
 fail() {
   echo "FAIL: $*" >&2
@@ -49,7 +50,7 @@ mkdir -p \
   "${REPO_ROOT}/Crawl/db" \
   "${REPO_ROOT}/Crawl/static/page-shots" \
   "${REPO_ROOT}/Agent-Do/data" \
-  "${REPO_ROOT}/WorkShop/state" \
+  "${WORKSHOP_STATE_DIR}" \
   "${REPO_ROOT}/EduRepo/backend/data"
 
 if [[ -d "${DB_FILE}" ]]; then
@@ -64,10 +65,15 @@ if [[ ! -f "${DB_FILE}" ]]; then
   touch "${DB_FILE}"
 fi
 
+[[ -w "${WORKSHOP_STATE_DIR}" ]] || fail "Workshop state directory is not writable: ${WORKSHOP_STATE_DIR}"
+[[ -f "${REPO_ROOT}/Agent-Do/Dockerfile.claude" ]] || fail "Missing Claude runtime Dockerfile: ${REPO_ROOT}/Agent-Do/Dockerfile.claude"
+
 docker compose -f "${SCRIPT_DIR}/docker-compose.yml" --env-file "${ENV_FILE}" --profile crawler --profile edurepo config --quiet
 
 ok "Docker daemon is available."
 ok "Required backend directories exist."
 ok "SQLite path is a file: ${DB_FILE}"
+ok "Workshop state directory is writable: ${WORKSHOP_STATE_DIR}"
+ok "Claude runtime Dockerfile exists."
 ok "Compose config is valid."
 ok "Cloud preflight finished. You can run ./deploy/up.sh next."

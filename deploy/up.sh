@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 ENV_FILE="${SCRIPT_DIR}/.env"
 DB_FILE="${REPO_ROOT}/Crawl/db/ai_news.db"
+WORKSHOP_STATE_DIR="${REPO_ROOT}/WorkShop/state"
 
 if [[ ! -f "${ENV_FILE}" ]]; then
   echo "Missing ${ENV_FILE}. Copy deploy/.env.example to deploy/.env and fill real values first."
@@ -25,7 +26,7 @@ mkdir -p \
   "${REPO_ROOT}/Crawl/db" \
   "${REPO_ROOT}/Crawl/static/page-shots" \
   "${REPO_ROOT}/Agent-Do/data" \
-  "${REPO_ROOT}/WorkShop/state" \
+  "${WORKSHOP_STATE_DIR}" \
   "${REPO_ROOT}/EduRepo/backend/data"
 
 if [[ -d "${DB_FILE}" ]]; then
@@ -40,6 +41,10 @@ if [[ ! -f "${DB_FILE}" ]]; then
   touch "${DB_FILE}"
 fi
 
+if [[ ! -w "${WORKSHOP_STATE_DIR}" ]]; then
+  fail "Workshop state directory is not writable: ${WORKSHOP_STATE_DIR}"
+fi
+
 CLAUDE_IMAGE="${CLAUDE_DOCKER_IMAGE:-claude-runtime:latest}"
 docker build \
   --build-arg NODE_IMAGE="${CLAUDE_NODE_IMAGE:-node:20-slim}" \
@@ -49,5 +54,7 @@ docker build \
   -t "${CLAUDE_IMAGE}" \
   -f "${REPO_ROOT}/Agent-Do/Dockerfile.claude" \
   "${REPO_ROOT}/Agent-Do"
+
+docker image inspect "${CLAUDE_IMAGE}" >/dev/null 2>&1 || fail "Required Claude runtime image was not built: ${CLAUDE_IMAGE}"
 
 docker compose -f "${SCRIPT_DIR}/docker-compose.yml" --env-file "${ENV_FILE}" up -d --build "$@"

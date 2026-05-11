@@ -51,13 +51,14 @@ services:
       - OSS_BUCKET_NAME=${OSS_BUCKET_NAME:-}
       - OSS_ENDPOINT=${OSS_ENDPOINT:-}
       - OSS_DOMAIN=${OSS_DOMAIN:-}
-      # 与 app.py 一致：阿里云百炼 DashScope（兼容 OpenAI 接口）
       - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY:-}
       - AGENT_DO_BASE_URL=${AGENT_DO_BASE_URL:-http://agent-do:8000}
       - AGENT_DO_DEFAULT_MODEL=${AGENT_DO_DEFAULT_MODEL:-sonnet}
       - AGENT_DO_MAX_TURNS=${AGENT_DO_MAX_TURNS:-8}
+      - WORKSHOP_METRICS_DB=/app/state/metrics.db
+      - WORKSHOP_AGENTDO_MAP_DB=/app/state/agentdo_session_map.db
     volumes:
-      - ./metrics.db:/app/metrics.db
+      - ./state:/app/state
     depends_on:
       agent-do:
         condition: service_healthy

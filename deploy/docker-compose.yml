@@ -119,9 +119,9 @@ services:
       AGENT_DO_DEFAULT_MODEL: ${AGENT_DO_DEFAULT_MODEL:-sonnet}
       AGENT_DO_MAX_TURNS: ${AGENT_DO_MAX_TURNS:-8}
       AGENT_DO_RELEASE_CLAUDE_AFTER_REQUEST: ${AGENT_DO_RELEASE_CLAUDE_AFTER_REQUEST:-true}
+      WORKSHOP_METRICS_DB: /app/state/metrics.db
       WORKSHOP_AGENTDO_MAP_DB: /app/state/agentdo_session_map.db
     volumes:
-      - ../WorkShop/metrics.db:/app/metrics.db
       - ../WorkShop/state:/app/state
       - ../Agent-Do/data:/data
     ports:

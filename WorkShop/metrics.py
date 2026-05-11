@@ -15,6 +15,7 @@ Usage in app.py:
 from __future__ import annotations
 
 import json
+import logging
 import os
 import sqlite3
 import threading
@@ -23,10 +24,20 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Generator
 
-_DB_PATH = os.getenv(
-    "WORKSHOP_METRICS_DB",
-    str(Path(__file__).resolve().parent / "metrics.db"),
-)
+_DEFAULT_DB_PATH = Path(__file__).resolve().parent / "metrics.db"
+_LOGGER = logging.getLogger("workshop.metrics")
+_METRICS_UNAVAILABLE = False
+
+
+def _resolve_db_path() -> Path:
+    raw_path = str(os.getenv("WORKSHOP_METRICS_DB", str(_DEFAULT_DB_PATH)) or "").strip()
+    path = Path(raw_path or _DEFAULT_DB_PATH)
+    if path.exists() and path.is_dir():
+        path = path / _DEFAULT_DB_PATH.name
+    return path
+
+
+_DB_PATH = _resolve_db_path()
 
 _RETENTION_HOURS = int(os.getenv("WORKSHOP_METRICS_RETENTION_HOURS", "72"))
 
@@ -75,15 +86,24 @@ CREATE INDEX IF NOT EXISTS idx_stream_events_rid ON stream_events(request_id);
 """
 
 
-def _get_conn() -> sqlite3.Connection:
+def _get_conn() -> sqlite3.Connection | None:
+    global _METRICS_UNAVAILABLE
+    if _METRICS_UNAVAILABLE:
+        return None
     conn: sqlite3.Connection | None = getattr(_local, "conn", None)
     if conn is None:
-        conn = sqlite3.connect(_DB_PATH, check_same_thread=False, timeout=10)
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA busy_timeout=5000")
-        conn.executescript(_INIT_SQL)
-        _local.conn = conn
+        try:
+            _DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+            conn = sqlite3.connect(str(_DB_PATH), check_same_thread=False, timeout=10)
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute("PRAGMA busy_timeout=5000")
+            conn.executescript(_INIT_SQL)
+            _local.conn = conn
+        except (OSError, sqlite3.Error):
+            _METRICS_UNAVAILABLE = True
+            _LOGGER.exception("Workshop metrics disabled; unable to open SQLite database at %s", _DB_PATH)
+            return None
     return conn
 
 
@@ -124,8 +144,12 @@ class Trace:
         self._step_counter = 0
         self._meta = meta or {}
         self._finished = False
+        self._disabled = False
 
         conn = _get_conn()
+        if conn is None:
+            self._disabled = True
+            return
         conn.execute(
             "INSERT INTO requests (request_id, endpoint, started_at, meta) VALUES (?,?,?,?)",
             (self.request_id, self.endpoint, self._started_at, json.dumps(self._meta, ensure_ascii=False, default=str)),
@@ -149,6 +173,8 @@ class Trace:
         finally:
             duration_ms = round((time.perf_counter() - t0) * 1000, 2)
             conn = _get_conn()
+            if conn is None:
+                return
             conn.execute(
                 "INSERT INTO steps (request_id, step_name, step_order, started_at, duration_ms, status, meta) "
                 "VALUES (?,?,?,?,?,?,?)",
@@ -168,6 +194,8 @@ class Trace:
         """Record a step after the fact (when context-manager is inconvenient)."""
         self._step_counter += 1
         conn = _get_conn()
+        if conn is None:
+            return
         conn.execute(
             "INSERT INTO steps (request_id, step_name, step_order, started_at, duration_ms, status, meta) "
             "VALUES (?,?,?,?,?,?,?)",
@@ -184,7 +212,7 @@ class Trace:
         conn.commit()
 
     def finish(self, *, error: str | None = None) -> None:
-        if self._finished:
+        if self._finished or self._disabled:
             return
         self._finished = True
         total_ms = round((time.perf_counter() - self._t0) * 1000, 2)
@@ -193,6 +221,8 @@ class Trace:
             self._meta["error"] = error
 
         conn = _get_conn()
+        if conn is None:
+            return
         conn.execute(
             "UPDATE requests SET total_ms=?, status=?, meta=? WHERE request_id=?",
             (
@@ -213,6 +243,8 @@ def query_recent_requests(
     offset: int = 0,
 ) -> list[dict[str, Any]]:
     conn = _get_conn()
+    if conn is None:
+        return []
     clauses = []
     params: list[Any] = []
     if endpoint:
@@ -228,6 +260,8 @@ def query_recent_requests(
 
 def query_steps_for_request(request_id: str) -> list[dict[str, Any]]:
     conn = _get_conn()
+    if conn is None:
+        return []
     rows = conn.execute(
         "SELECT * FROM steps WHERE request_id=? ORDER BY step_order",
         (request_id,),
@@ -237,6 +271,8 @@ def query_steps_for_request(request_id: str) -> list[dict[str, Any]]:
 
 def query_request_with_steps(request_id: str) -> dict[str, Any] | None:
     conn = _get_conn()
+    if conn is None:
+        return None
     row = conn.execute(
         "SELECT * FROM requests WHERE request_id=?", (request_id,)
     ).fetchone()
@@ -249,6 +285,8 @@ def query_request_with_steps(request_id: str) -> dict[str, Any] | None:
 
 def query_stats(hours: int = 24) -> dict[str, Any]:
     conn = _get_conn()
+    if conn is None:
+        return {"hours": hours, "endpoints": []}
     cutoff = _now() - hours * 3600
     rows = conn.execute(
         """
@@ -272,6 +310,8 @@ def query_stats(hours: int = 24) -> dict[str, Any]:
 
 def query_step_stats(endpoint: str, hours: int = 24) -> list[dict[str, Any]]:
     conn = _get_conn()
+    if conn is None:
+        return []
     cutoff = _now() - hours * 3600
     rows = conn.execute(
         """
@@ -299,6 +339,8 @@ def record_stream_event(
     payload: dict[str, Any] | str,
 ) -> None:
     conn = _get_conn()
+    if conn is None:
+        return
     raw = payload if isinstance(payload, str) else json.dumps(payload, ensure_ascii=False, default=str)
     conn.execute(
         "INSERT INTO stream_events (request_id, seq, event_type, summary, payload, ts) VALUES (?,?,?,?,?,?)",
@@ -309,6 +351,8 @@ def record_stream_event(
 
 def query_stream_events(request_id: str) -> list[dict[str, Any]]:
     conn = _get_conn()
+    if conn is None:
+        return []
     rows = conn.execute(
         "SELECT * FROM stream_events WHERE request_id=? ORDER BY seq",
         (request_id,),
@@ -320,6 +364,8 @@ def purge_old(hours: int | None = None) -> int:
     h = hours if hours is not None else _RETENTION_HOURS
     cutoff = _now() - h * 3600
     conn = _get_conn()
+    if conn is None:
+        return 0
     conn.execute("DELETE FROM stream_events WHERE request_id IN (SELECT request_id FROM requests WHERE started_at < ?)", (cutoff,))
     conn.execute("DELETE FROM steps WHERE request_id IN (SELECT request_id FROM requests WHERE started_at < ?)", (cutoff,))
     cur = conn.execute("DELETE FROM requests WHERE started_at < ?", (cutoff,))
