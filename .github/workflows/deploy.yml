@@ -40,8 +40,22 @@ jobs:
       - name: Deploy backend services
         run: |
           ssh -i ~/.ssh/deploy_key -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" \
-            "BACKEND_DEPLOY_PATH='${BACKEND_DEPLOY_PATH:-$HOME/Backend/deploy}' bash -s" <<'REMOTE'
+            "BACKEND_DEPLOY_PATH='${BACKEND_DEPLOY_PATH}' bash -s" <<'REMOTE'
           set -euo pipefail
+
+          BACKEND_DEPLOY_PATH="${BACKEND_DEPLOY_PATH:-}"
+          if [ -z "$BACKEND_DEPLOY_PATH" ]; then
+            for candidate in /data/projects/Backend/deploy "$HOME/Backend/deploy"; do
+              if [ -d "$candidate" ]; then
+                BACKEND_DEPLOY_PATH="$candidate"
+                break
+              fi
+            done
+          fi
+          if [ -z "$BACKEND_DEPLOY_PATH" ]; then
+            echo "Backend deploy path not found. Set BACKEND_DEPLOY_PATH secret or clone Backend to /data/projects/Backend."
+            exit 1
+          fi
 
           cd "$BACKEND_DEPLOY_PATH"
           git fetch origin main
