@@ -18,8 +18,6 @@ services:
       - ../Crawl/static/page-shots:/app/static/page-shots
       - ./.env:/app/.env:ro
       - ./.env:/app/shared.env:ro
-    ports:
-      - "${CRAWL_API_PORT:-8000}:8000"
     restart: unless-stopped
 
   crawl-monitor:
@@ -43,8 +41,6 @@ services:
       - ../Crawl/static/page-shots:/app/static/page-shots
       - ./.env:/app/.env:ro
       - ./.env:/app/shared.env:ro
-    ports:
-      - "${CRAWL_MONITOR_PORT:-6670}:6666"
     command: ["uvicorn", "monitor_api:app", "--host", "0.0.0.0", "--port", "6666"]
     depends_on:
       - crawl-api
@@ -89,8 +85,6 @@ services:
     volumes:
       - ${DOCKER_SOCK_PATH:-/var/run/docker.sock}:/var/run/docker.sock
       - ../Agent-Do/data:/data
-    ports:
-      - "${AGENT_DO_PORT:-18000}:8000"
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/healthz"]
       interval: 15s
@@ -124,8 +118,6 @@ services:
     volumes:
       - ../WorkShop/state:/app/state
       - ../Agent-Do/data:/data
-    ports:
-      - "${WORKSHOP_PORT:-5000}:5000"
     depends_on:
       agent-do:
         condition: service_healthy
@@ -205,8 +197,6 @@ services:
       - ../Crawl/static/page-shots:/app/static/page-shots
       - ./.env:/app/.env:ro
       - ./.env:/app/shared.env:ro
-    ports:
-      - "${CRAWL_WORKER_PORT:-6600}:6600"
     command: ["python", "crawler_worker.py"]
     restart: unless-stopped
 
@@ -233,8 +223,6 @@ services:
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
     volumes:
       - ../EduRepo/backend/data:/app/data
-    ports:
-      - "${EDUREPO_PORT:-9010}:9010"
     depends_on:
       - crawl-api
     restart: unless-stopped
