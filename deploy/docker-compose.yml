@@ -145,6 +145,8 @@ services:
     volumes:
       - ../OpenMAIC/.env.local:/app/.env.local:ro
       - openmaic-data:/app/data
+    ports:
+      - "${OPENMAIC_PORT:-3000}:3000"
     restart: unless-stopped
 
   web-frontend:
