@@ -6,11 +6,11 @@ FROM ${DOCKER_CLI_IMAGE} AS docker-cli
 FROM ${PYTHON_IMAGE}
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium
 
 ARG APT_MIRROR=https://mirrors.aliyun.com/debian
 ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
-ARG PLAYWRIGHT_DOWNLOAD_HOST=
 
 RUN set -eux; \
     if [ -n "${APT_MIRROR}" ] && [ -f /etc/apt/sources.list.d/debian.sources ]; then \
@@ -19,6 +19,7 @@ RUN set -eux; \
     apt-get update && apt-get install -y --no-install-recommends \
     bash \
     ca-certificates \
+    chromium \
     curl \
     fonts-liberation \
     fonts-noto-color-emoji \
@@ -57,13 +58,6 @@ COPY --from=docker-cli /usr/local/bin/docker /usr/local/bin/docker
 
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -i "${PIP_INDEX_URL}" -r /app/requirements.txt
-RUN set -eux; \
-    if [ -n "${PLAYWRIGHT_DOWNLOAD_HOST}" ]; then \
-      PLAYWRIGHT_DOWNLOAD_HOST="${PLAYWRIGHT_DOWNLOAD_HOST}" python -m playwright install chromium || \
-      python -m playwright install chromium; \
-    else \
-      python -m playwright install chromium; \
-    fi
 
 COPY app /app/app
 COPY Dockerfile.claude /app/Dockerfile.claude

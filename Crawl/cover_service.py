@@ -3,6 +3,7 @@ import hashlib
 import io
 import os
 import re
+import shutil
 import struct
 import zlib
 from typing import Dict, List, Optional, Tuple
@@ -62,6 +63,7 @@ ICON_PATTERNS = [
 ]
 _bucket: Optional[oss2.Bucket] = None
 _llm_client: Optional[AsyncOpenAI] = None
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = os.getenv("PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH", "").strip()
 
 
 def _oss_enabled() -> bool:
@@ -368,7 +370,18 @@ async def _generate_ai_cover_bytes(title: str) -> Optional[bytes]:
 async def _capture_screenshot(article_url: str) -> Optional[bytes]:
     try:
         async with async_playwright() as playwright:
-            browser = await playwright.chromium.launch(headless=True)
+            launch_kwargs = {
+                "headless": True,
+                "args": ["--no-sandbox", "--disable-dev-shm-usage"],
+            }
+            executable_path = (
+                PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+                or shutil.which("chromium")
+                or shutil.which("chromium-browser")
+            )
+            if executable_path:
+                launch_kwargs["executable_path"] = executable_path
+            browser = await playwright.chromium.launch(**launch_kwargs)
             page = await browser.new_page(viewport={"width": 1280, "height": 720})
             # 更稳的截图策略：先保证 DOM ready，再尽量等网络/渲染稳定，避免截到骨架屏
             await page.goto(article_url, wait_until="domcontentloaded", timeout=20000)
