@@ -115,14 +115,15 @@ docker compose -f deploy/docker-compose.yml --env-file deploy/.env logs -f --tai
 如果阿里云机器拉 Docker Hub 镜像不稳定，可以在 `deploy/.env` 里替换这些基础镜像为你自己的镜像仓库地址：
 
 ```env
-CRAWL_PYTHON_IMAGE=python:3.10-slim
-AGENT_DO_PYTHON_IMAGE=python:3.11-slim
-AGENT_DO_DOCKER_CLI_IMAGE=docker:27-cli
-WORKSHOP_PYTHON_IMAGE=python:3.11-slim
-CLAUDE_NODE_IMAGE=node:20-slim
-OPENMAIC_NODE_IMAGE=node:22-alpine3.19
-EDUREPO_PYTHON_IMAGE=python:3.10-slim
-APP_RUNTIME_IMAGE=node:20-alpine
+DOCKERHUB_MIRROR_PREFIX=docker.m.daocloud.io/library/
+CRAWL_PYTHON_IMAGE=docker.m.daocloud.io/library/python:3.10-slim
+AGENT_DO_PYTHON_IMAGE=docker.m.daocloud.io/library/python:3.11-slim
+AGENT_DO_DOCKER_CLI_IMAGE=docker.m.daocloud.io/library/docker:27-cli
+WORKSHOP_PYTHON_IMAGE=docker.m.daocloud.io/library/python:3.11-slim
+CLAUDE_NODE_IMAGE=docker.m.daocloud.io/library/node:20-slim
+OPENMAIC_NODE_IMAGE=docker.m.daocloud.io/library/node:22-alpine3.19
+EDUREPO_PYTHON_IMAGE=docker.m.daocloud.io/library/python:3.10-slim
+APP_RUNTIME_IMAGE=docker.m.daocloud.io/library/node:20-alpine
 ```
 
 包源也已参数化，默认使用国内源：
