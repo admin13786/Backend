@@ -59,9 +59,12 @@ ensure_swap() {
 
   local swap_file="${DEPLOY_SWAP_FILE:-/swapfile-aiedu}"
   local swap_size_mb="${DEPLOY_SWAP_SIZE_MB:-4096}"
-  local target_bytes=$((swap_size_mb * 1024 * 1024))
+  local min_swap_mb="${DEPLOY_SWAP_MIN_SIZE_MB:-1024}"
+  local reserve_mb="${DEPLOY_SWAP_DISK_RESERVE_MB:-1024}"
   local current_bytes=0
   local is_active=0
+  local effective_size_mb="${swap_size_mb}"
+  local available_mb=0
 
   if swapon --show=NAME --noheadings 2>/dev/null | grep -Fxq "${swap_file}"; then
     is_active=1
@@ -71,7 +74,7 @@ ensure_swap() {
     current_bytes="$(stat -c %s "${swap_file}" 2>/dev/null || echo 0)"
   fi
 
-  if [[ "${is_active}" -eq 1 && "${current_bytes}" -ge "${target_bytes}" ]]; then
+  if [[ "${is_active}" -eq 1 && "${current_bytes}" -ge $((swap_size_mb * 1024 * 1024)) ]]; then
     echo "OK: swap file is active: ${swap_file} (${swap_size_mb}MB target)."
     return 0
   fi
@@ -86,24 +89,53 @@ ensure_swap() {
       echo "WARN: Failed to disable undersized swap file ${swap_file}; continuing without resizing it." >&2
       return 0
     }
-  fi
-
-  if [[ -f "${swap_file}" && "${current_bytes}" -lt "${target_bytes}" ]]; then
     rm -f "${swap_file}"
   fi
 
+  if [[ "${is_active}" -eq 0 && -f "${swap_file}" ]]; then
+    # Remove stale or partial files left by interrupted deployments.
+    rm -f "${swap_file}"
+  fi
+
+  available_mb="$(
+    df -Pm "$(dirname "${swap_file}")" 2>/dev/null | awk 'NR == 2 {print $4}'
+  )"
+  available_mb="${available_mb:-0}"
+
+  if [[ "${available_mb}" -gt "${reserve_mb}" ]]; then
+    local max_swap_mb=$((available_mb - reserve_mb))
+    if [[ "${effective_size_mb}" -gt "${max_swap_mb}" ]]; then
+      effective_size_mb="${max_swap_mb}"
+      echo "WARN: Not enough free disk for ${swap_size_mb}MB swap; using ${effective_size_mb}MB instead." >&2
+    fi
+  fi
+
+  if [[ "${effective_size_mb}" -lt "${min_swap_mb}" ]]; then
+    echo "WARN: Free disk is too low to create a safe swap file; need at least ${min_swap_mb}MB after ${reserve_mb}MB reserve." >&2
+    return 0
+  fi
+
   if [[ ! -f "${swap_file}" ]]; then
-    fallocate -l "${swap_size_mb}M" "${swap_file}" 2>/dev/null || \
-      dd if=/dev/zero of="${swap_file}" bs=1M count="${swap_size_mb}" status=none
+    if ! fallocate -l "${effective_size_mb}M" "${swap_file}" 2>/dev/null; then
+      if ! dd if=/dev/zero of="${swap_file}" bs=1M count="${effective_size_mb}" status=none; then
+        rm -f "${swap_file}"
+        echo "WARN: Failed to allocate swap file ${swap_file}; continuing without swap." >&2
+        return 0
+      fi
+    fi
     chmod 600 "${swap_file}"
-    mkswap "${swap_file}" >/dev/null
+    if ! mkswap "${swap_file}" >/dev/null; then
+      rm -f "${swap_file}"
+      echo "WARN: Failed to initialize swap file ${swap_file}; continuing without swap." >&2
+      return 0
+    fi
   fi
 
   swapon "${swap_file}" 2>/dev/null || \
     echo "WARN: Failed to enable swap file ${swap_file}; continuing without swap." >&2
 
   if swapon --show=NAME --noheadings 2>/dev/null | grep -Fxq "${swap_file}"; then
-    echo "OK: enabled swap file ${swap_file} (${swap_size_mb}MB)."
+    echo "OK: enabled swap file ${swap_file} (${effective_size_mb}MB)."
   fi
 }
 
