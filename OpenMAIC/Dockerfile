@@ -27,6 +27,12 @@ ARG APK_MIRROR
     
     # ---- Stage 3: Builder ----
     FROM base AS builder
+
+    ARG NEXT_TELEMETRY_DISABLED=1
+    ARG OPENMAIC_NODE_OPTIONS=--max-old-space-size=1536
+
+    ENV NEXT_TELEMETRY_DISABLED=${NEXT_TELEMETRY_DISABLED}
+    ENV NODE_OPTIONS=${OPENMAIC_NODE_OPTIONS}
     
     COPY --from=deps /app/node_modules ./node_modules
     COPY --from=deps /app/packages ./packages

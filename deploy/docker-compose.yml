@@ -138,6 +138,8 @@ services:
         NODE_IMAGE: ${OPENMAIC_NODE_IMAGE:-node:22-alpine3.19}
         APK_MIRROR: ${OPENMAIC_APK_MIRROR:-mirrors.aliyun.com}
         NPM_REGISTRY: ${OPENMAIC_NPM_REGISTRY:-https://registry.npmmirror.com}
+        NEXT_TELEMETRY_DISABLED: ${NEXT_TELEMETRY_DISABLED:-1}
+        OPENMAIC_NODE_OPTIONS: ${OPENMAIC_NODE_OPTIONS:---max-old-space-size=1536}
     container_name: aiedu-openmaic
     env_file:
       - ./.env
@@ -180,7 +182,6 @@ services:
       - crawl-api
       - agent-do
       - workshop
-      - openmaic
     restart: unless-stopped
 
   crawl-worker:

@@ -26,6 +26,21 @@ set -a
 source "${ENV_FILE}"
 set +a
 
+DOCKERHUB_MIRROR_PREFIX="${DOCKERHUB_MIRROR_PREFIX-docker.m.daocloud.io/library/}"
+export COMPOSE_PARALLEL_LIMIT="${COMPOSE_PARALLEL_LIMIT:-1}"
+export NEXT_TELEMETRY_DISABLED="${NEXT_TELEMETRY_DISABLED:-1}"
+export OPENMAIC_NODE_OPTIONS="${OPENMAIC_NODE_OPTIONS:---max-old-space-size=1536}"
+export CRAWL_PYTHON_IMAGE="${CRAWL_PYTHON_IMAGE:-${DOCKERHUB_MIRROR_PREFIX}python:3.10-slim}"
+export AGENT_DO_PYTHON_IMAGE="${AGENT_DO_PYTHON_IMAGE:-${DOCKERHUB_MIRROR_PREFIX}python:3.11-slim}"
+export AGENT_DO_DOCKER_CLI_IMAGE="${AGENT_DO_DOCKER_CLI_IMAGE:-${DOCKERHUB_MIRROR_PREFIX}docker:27-cli}"
+export WORKSHOP_PYTHON_IMAGE="${WORKSHOP_PYTHON_IMAGE:-${DOCKERHUB_MIRROR_PREFIX}python:3.11-slim}"
+export CLAUDE_NODE_IMAGE="${CLAUDE_NODE_IMAGE:-${DOCKERHUB_MIRROR_PREFIX}node:20-slim}"
+export APP_RUNTIME_IMAGE="${APP_RUNTIME_IMAGE:-${DOCKERHUB_MIRROR_PREFIX}node:20-alpine}"
+export OPENMAIC_NODE_IMAGE="${OPENMAIC_NODE_IMAGE:-${DOCKERHUB_MIRROR_PREFIX}node:22-alpine3.19}"
+export WEB_FRONTEND_NODE_IMAGE="${WEB_FRONTEND_NODE_IMAGE:-${DOCKERHUB_MIRROR_PREFIX}node:22-alpine}"
+export WEB_FRONTEND_NGINX_IMAGE="${WEB_FRONTEND_NGINX_IMAGE:-${DOCKERHUB_MIRROR_PREFIX}nginx:stable-alpine}"
+export EDUREPO_PYTHON_IMAGE="${EDUREPO_PYTHON_IMAGE:-${DOCKERHUB_MIRROR_PREFIX}python:3.10-slim}"
+
 command -v docker >/dev/null 2>&1 || fail "docker is not installed or not in PATH."
 docker info >/dev/null 2>&1 || fail "docker daemon is not running or current user cannot access it."
 docker compose version >/dev/null 2>&1 || fail "docker compose plugin is not available."

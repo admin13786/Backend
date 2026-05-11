@@ -113,6 +113,7 @@ PLAYWRIGHT_NAV_TIMEOUT_MS = int(env_or_default("PLAYWRIGHT_NAV_TIMEOUT_MS", "450
 PLAYWRIGHT_SETTLE_MS = int(env_or_default("PLAYWRIGHT_SETTLE_MS", "1500"))
 PLAYWRIGHT_ACTION_SETTLE_MS = int(env_or_default("PLAYWRIGHT_ACTION_SETTLE_MS", "1200"))
 PLAYWRIGHT_MAX_CONSOLE_ERRORS = int(env_or_default("PLAYWRIGHT_MAX_CONSOLE_ERRORS", "0"))
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = env_or_default("PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH", "")
 PLAYWRIGHT_ACCEPTANCE_INTERNAL_BASE_URL = env_or_default(
     "PLAYWRIGHT_ACCEPTANCE_INTERNAL_BASE_URL",
     "http://127.0.0.1:8000",
@@ -1599,10 +1600,20 @@ def build_acceptance_report(
             if browser_launcher is None:
                 raise RuntimeError(f"Unsupported Playwright browser: {PLAYWRIGHT_BROWSER}")
 
-            browser = browser_launcher.launch(
-                headless=True,
-                args=["--no-sandbox", "--disable-dev-shm-usage"],
-            )
+            launch_kwargs = {
+                "headless": True,
+                "args": ["--no-sandbox", "--disable-dev-shm-usage"],
+            }
+            if PLAYWRIGHT_BROWSER == "chromium":
+                executable_path = (
+                    PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+                    or shutil.which("chromium")
+                    or shutil.which("chromium-browser")
+                )
+                if executable_path:
+                    launch_kwargs["executable_path"] = executable_path
+
+            browser = browser_launcher.launch(**launch_kwargs)
             try:
                 context = browser.new_context(
                     viewport={
