@@ -72,7 +72,7 @@ jobs:
       - name: Deploy backend services
         run: |
           ssh -i ~/.ssh/deploy_key -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" \
-            "BACKEND_DEPLOY_PATH='${BACKEND_DEPLOY_PATH}' bash -s" <<'REMOTE'
+            "BACKEND_DEPLOY_PATH='${BACKEND_DEPLOY_PATH}' OPENMAIC_PUBLIC_ORIGIN_OVERRIDE='http://${SSH_HOST}:3000' bash -s" <<'REMOTE'
           set -euo pipefail
 
           BACKEND_DEPLOY_PATH="${BACKEND_DEPLOY_PATH:-/data/projects/Backend/deploy}"
@@ -87,13 +87,7 @@ jobs:
           set +a
 
           chmod +x ./up.sh
-          ./up.sh --force-recreate crawl-api agent-do workshop
-
-          if [ "${DEPLOY_OPENMAIC:-0}" = "1" ]; then
-            ./up.sh --force-recreate openmaic
-          else
-            echo "Skipping OpenMAIC deploy. Set DEPLOY_OPENMAIC=1 after provisioning enough cloud build resources."
-          fi
+          ./up.sh --force-recreate crawl-api agent-do workshop openmaic
 
           docker compose ps crawl-api agent-do workshop openmaic || true
           REMOTE
