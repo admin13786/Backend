@@ -42,6 +42,17 @@ for dir in "${required_dirs[@]}"; do
   [[ -d "${dir}" ]] || fail "Missing required directory: ${dir}"
 done
 
+openmaic_env_file="${REPO_ROOT}/OpenMAIC/.env.local"
+openmaic_env_example="${REPO_ROOT}/OpenMAIC/.env.example"
+if [[ ! -f "${openmaic_env_file}" ]]; then
+  if [[ -f "${openmaic_env_example}" ]]; then
+    cp "${openmaic_env_example}" "${openmaic_env_file}"
+    warn "Missing OpenMAIC env file; copied ${openmaic_env_example} to ${openmaic_env_file}."
+  else
+    fail "Missing OpenMAIC env file and template: ${openmaic_env_file}"
+  fi
+fi
+
 [[ -n "${AGENT_DATA_HOST_ROOT:-}" ]] || fail "AGENT_DATA_HOST_ROOT is required."
 [[ -n "${ALIYUN_ANTHROPIC_API_KEY:-${DASHSCOPE_API_KEY:-}}" ]] || warn "ALIYUN_ANTHROPIC_API_KEY or DASHSCOPE_API_KEY is empty; Workshop generation will fail."
 

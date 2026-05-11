@@ -23,6 +23,16 @@ set +a
 
 [[ -n "${AGENT_DATA_HOST_ROOT:-}" ]] || fail "AGENT_DATA_HOST_ROOT is required."
 
+OPENMAIC_ENV_FILE="${REPO_ROOT}/OpenMAIC/.env.local"
+OPENMAIC_ENV_EXAMPLE="${REPO_ROOT}/OpenMAIC/.env.example"
+if [[ ! -f "${OPENMAIC_ENV_FILE}" ]]; then
+  if [[ -f "${OPENMAIC_ENV_EXAMPLE}" ]]; then
+    cp "${OPENMAIC_ENV_EXAMPLE}" "${OPENMAIC_ENV_FILE}"
+  else
+    fail "Missing OpenMAIC env file and template: ${OPENMAIC_ENV_FILE}"
+  fi
+fi
+
 mkdir -p \
   "${AGENT_DATA_HOST_ROOT}" \
   "${REPO_ROOT}/Crawl/logs" \
