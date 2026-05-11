@@ -24,6 +24,9 @@ jobs:
       BACKEND_DEPLOY_PATH: ${{ secrets.BACKEND_DEPLOY_PATH }}
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Validate secrets
         run: |
           test -n "$SSH_HOST"
@@ -37,29 +40,36 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p "${SSH_PORT:-22}" -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
+      - name: Upload backend source
+        run: |
+          tar \
+            --exclude='.git' \
+            --exclude='.env' \
+            --exclude='*.env' \
+            --exclude='deploy/.env' \
+            --exclude='Agent-Do/data' \
+            --exclude='Crawl/db' \
+            --exclude='Crawl/logs' \
+            --exclude='Crawl/static/page-shots' \
+            --exclude='EduRepo/backend/data' \
+            --exclude='OpenMAIC/.env.local' \
+            --exclude='OpenMAIC/data' \
+            --exclude='WorkShop/state' \
+            --exclude='**/__pycache__' \
+            --exclude='**/.venv' \
+            --exclude='**/node_modules' \
+            --exclude='**/.next' \
+            -czf - . | ssh -i ~/.ssh/deploy_key -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" \
+              "BACKEND_DEPLOY_PATH='${BACKEND_DEPLOY_PATH}' sh -c 'set -eu; BACKEND_DEPLOY_PATH=\"\${BACKEND_DEPLOY_PATH:-/data/projects/Backend/deploy}\"; BACKEND_ROOT=\$(dirname \"\$BACKEND_DEPLOY_PATH\"); mkdir -p \"\$BACKEND_ROOT\"; tar -xzf - -C \"\$BACKEND_ROOT\"'"
+
       - name: Deploy backend services
         run: |
           ssh -i ~/.ssh/deploy_key -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" \
             "BACKEND_DEPLOY_PATH='${BACKEND_DEPLOY_PATH}' bash -s" <<'REMOTE'
           set -euo pipefail
 
-          BACKEND_DEPLOY_PATH="${BACKEND_DEPLOY_PATH:-}"
-          if [ -z "$BACKEND_DEPLOY_PATH" ]; then
-            for candidate in /data/projects/Backend/deploy "$HOME/Backend/deploy"; do
-              if [ -d "$candidate" ]; then
-                BACKEND_DEPLOY_PATH="$candidate"
-                break
-              fi
-            done
-          fi
-          if [ -z "$BACKEND_DEPLOY_PATH" ]; then
-            echo "Backend deploy path not found. Set BACKEND_DEPLOY_PATH secret or clone Backend to /data/projects/Backend."
-            exit 1
-          fi
-
+          BACKEND_DEPLOY_PATH="${BACKEND_DEPLOY_PATH:-/data/projects/Backend/deploy}"
           cd "$BACKEND_DEPLOY_PATH"
-          git fetch origin main
-          git pull --ff-only origin main
 
           if [ -f ./cloud-check.sh ]; then
             bash ./cloud-check.sh
