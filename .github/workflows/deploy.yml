@@ -72,7 +72,7 @@ jobs:
       - name: Deploy backend services
         run: |
           ssh -i ~/.ssh/deploy_key -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" \
-            "BACKEND_DEPLOY_PATH='${BACKEND_DEPLOY_PATH}' OPENMAIC_PUBLIC_ORIGIN_OVERRIDE='http://${SSH_HOST}:3000' bash -s" <<'REMOTE'
+            "BACKEND_DEPLOY_PATH='${BACKEND_DEPLOY_PATH}' OPENMAIC_PUBLIC_ORIGIN_OVERRIDE='http://${SSH_HOST}:3000' OPENMAIC_NODE_OPTIONS_OVERRIDE='--max-old-space-size=1024' bash -s" <<'REMOTE'
           set -euo pipefail
 
           BACKEND_DEPLOY_PATH="${BACKEND_DEPLOY_PATH:-/data/projects/Backend/deploy}"
