@@ -36,6 +36,9 @@ fi
 if [[ -n "${DEPLOY_SWAP_SIZE_MB_OVERRIDE:-}" ]]; then
   export DEPLOY_SWAP_SIZE_MB="${DEPLOY_SWAP_SIZE_MB_OVERRIDE}"
 fi
+if [[ -n "${OPENMAIC_SKIP_BUILD_OVERRIDE:-}" ]]; then
+  export OPENMAIC_SKIP_BUILD="${OPENMAIC_SKIP_BUILD_OVERRIDE}"
+fi
 
 DOCKERHUB_MIRROR_PREFIX="${DOCKERHUB_MIRROR_PREFIX-docker.m.daocloud.io/library/}"
 export COMPOSE_PARALLEL_LIMIT="${COMPOSE_PARALLEL_LIMIT:-1}"
@@ -194,4 +197,26 @@ docker build \
 
 docker image inspect "${CLAUDE_IMAGE}" >/dev/null 2>&1 || fail "Required Claude runtime image was not built: ${CLAUDE_IMAGE}"
 
-docker compose -f "${SCRIPT_DIR}/docker-compose.yml" --env-file "${ENV_FILE}" up -d --build "$@"
+if [[ "${OPENMAIC_SKIP_BUILD:-0}" == "1" ]]; then
+  other_services=()
+  has_openmaic=0
+
+  for service in "$@"; do
+    if [[ "${service}" == "openmaic" ]]; then
+      has_openmaic=1
+    else
+      other_services+=("${service}")
+    fi
+  done
+
+  if [[ "$#" -gt 0 && "${has_openmaic}" == "1" ]]; then
+    if [[ "${#other_services[@]}" -gt 0 ]]; then
+      docker compose -f "${SCRIPT_DIR}/docker-compose.yml" --env-file "${ENV_FILE}" up -d --build "${other_services[@]}"
+    fi
+    docker compose -f "${SCRIPT_DIR}/docker-compose.yml" --env-file "${ENV_FILE}" up -d --no-build openmaic
+  else
+    docker compose -f "${SCRIPT_DIR}/docker-compose.yml" --env-file "${ENV_FILE}" up -d --no-build "$@"
+  fi
+else
+  docker compose -f "${SCRIPT_DIR}/docker-compose.yml" --env-file "${ENV_FILE}" up -d --build "$@"
+fi
