@@ -182,7 +182,6 @@ services:
       - crawl-api
       - agent-do
       - workshop
-      - openmaic
     restart: unless-stopped
 
   crawl-worker:

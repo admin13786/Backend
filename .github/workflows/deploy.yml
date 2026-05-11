@@ -82,7 +82,18 @@ jobs:
             bash ./cloud-check.sh
           fi
 
+          set -a
+          source ./.env
+          set +a
+
           chmod +x ./up.sh
-          ./up.sh --force-recreate crawl-api agent-do workshop openmaic
-          docker compose ps crawl-api agent-do workshop openmaic
+          ./up.sh --force-recreate crawl-api agent-do workshop
+
+          if [ "${DEPLOY_OPENMAIC:-0}" = "1" ]; then
+            ./up.sh --force-recreate openmaic
+          else
+            echo "Skipping OpenMAIC deploy. Set DEPLOY_OPENMAIC=1 after provisioning enough cloud build resources."
+          fi
+
+          docker compose ps crawl-api agent-do workshop openmaic || true
           REMOTE
