@@ -138,3 +138,16 @@ jobs:
           docker compose logs --tail 80 openmaic >&2 || true
           exit 1
           REMOTE
+
+      - name: Verify public OpenMAIC endpoint
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl -fsS "http://${SSH_HOST}:3000/api/health" >/dev/null; then
+              echo "Public OpenMAIC endpoint check passed."
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "Public OpenMAIC endpoint check failed. Check the Alibaba Cloud security group/firewall for TCP 3000." >&2
+          exit 1
