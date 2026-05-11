@@ -8,7 +8,7 @@ DB_FILE="${REPO_ROOT}/Crawl/db/ai_news.db"
 WORKSHOP_STATE_DIR="${REPO_ROOT}/WorkShop/state"
 
 if [[ ! -f "${ENV_FILE}" ]]; then
-  echo "Missing ${ENV_FILE}. Copy deploy/.env.example to deploy/.env and fill real values first."
+  echo "Missing ${ENV_FILE}. Copy deploy/.env.example to deploy/.env and fill real values first, or inject BACKEND_ENV_FILE from GitHub Actions."
   exit 1
 fi
 
@@ -21,7 +21,10 @@ set -a
 source "${ENV_FILE}"
 set +a
 
+[[ -n "${AGENT_DATA_HOST_ROOT:-}" ]] || fail "AGENT_DATA_HOST_ROOT is required."
+
 mkdir -p \
+  "${AGENT_DATA_HOST_ROOT}" \
   "${REPO_ROOT}/Crawl/logs" \
   "${REPO_ROOT}/Crawl/db" \
   "${REPO_ROOT}/Crawl/static/page-shots" \
@@ -43,6 +46,10 @@ fi
 
 if [[ ! -w "${WORKSHOP_STATE_DIR}" ]]; then
   fail "Workshop state directory is not writable: ${WORKSHOP_STATE_DIR}"
+fi
+
+if [[ ! -w "${AGENT_DATA_HOST_ROOT}" ]]; then
+  fail "Agent data host root is not writable: ${AGENT_DATA_HOST_ROOT}"
 fi
 
 CLAUDE_IMAGE="${CLAUDE_DOCKER_IMAGE:-claude-runtime:latest}"

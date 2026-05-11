@@ -56,7 +56,7 @@ vi deploy/.env
 ```env
 DASHSCOPE_API_KEY=你的真实值
 ALIYUN_ANTHROPIC_API_KEY=你的真实值
-AGENT_DATA_HOST_ROOT=/root/Backend/Agent-Do/data
+AGENT_DATA_HOST_ROOT=/data/projects/Backend/Agent-Do/data
 DEFAULT_RUNTIME_PROFILE=aliyun
 OPENMAIC_PORT=3000
 ```

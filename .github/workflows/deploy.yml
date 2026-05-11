@@ -22,6 +22,7 @@ jobs:
       SSH_PORT: ${{ secrets.SERVER_PORT }}
       SSH_KEY: ${{ secrets.SERVER_PRIVATE_KEY }}
       BACKEND_DEPLOY_PATH: ${{ secrets.BACKEND_DEPLOY_PATH }}
+      BACKEND_ENV_FILE: ${{ secrets.BACKEND_ENV_FILE }}
 
     steps:
       - name: Checkout
@@ -61,6 +62,12 @@ jobs:
             --exclude='**/.next' \
             -czf - . | ssh -i ~/.ssh/deploy_key -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" \
               "BACKEND_DEPLOY_PATH='${BACKEND_DEPLOY_PATH}' sh -c 'set -eu; BACKEND_DEPLOY_PATH=\"\${BACKEND_DEPLOY_PATH:-/data/projects/Backend/deploy}\"; BACKEND_ROOT=\$(dirname \"\$BACKEND_DEPLOY_PATH\"); mkdir -p \"\$BACKEND_ROOT\"; tar -xzf - -C \"\$BACKEND_ROOT\"'"
+
+      - name: Install backend env file
+        if: env.BACKEND_ENV_FILE != ''
+        run: |
+          printf '%s' "$BACKEND_ENV_FILE" | ssh -i ~/.ssh/deploy_key -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" \
+            "BACKEND_DEPLOY_PATH='${BACKEND_DEPLOY_PATH}' sh -c 'set -eu; BACKEND_DEPLOY_PATH=\"\${BACKEND_DEPLOY_PATH:-/data/projects/Backend/deploy}\"; mkdir -p \"\$BACKEND_DEPLOY_PATH\"; umask 077; cat > \"\$BACKEND_DEPLOY_PATH/.env.tmp\"; mv \"\$BACKEND_DEPLOY_PATH/.env.tmp\" \"\$BACKEND_DEPLOY_PATH/.env\"'"
 
       - name: Deploy backend services
         run: |

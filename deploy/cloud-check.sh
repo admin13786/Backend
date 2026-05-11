@@ -20,7 +20,7 @@ ok() {
   echo "OK: $*"
 }
 
-[[ -f "${ENV_FILE}" ]] || fail "Missing ${ENV_FILE}. Copy deploy/.env.example to deploy/.env first."
+[[ -f "${ENV_FILE}" ]] || fail "Missing ${ENV_FILE}. Copy deploy/.env.example to deploy/.env first, or set GitHub secret BACKEND_ENV_FILE so deploy can install it automatically."
 
 set -a
 source "${ENV_FILE}"
@@ -46,6 +46,7 @@ done
 [[ -n "${ALIYUN_ANTHROPIC_API_KEY:-${DASHSCOPE_API_KEY:-}}" ]] || warn "ALIYUN_ANTHROPIC_API_KEY or DASHSCOPE_API_KEY is empty; Workshop generation will fail."
 
 mkdir -p \
+  "${AGENT_DATA_HOST_ROOT}" \
   "${REPO_ROOT}/Crawl/logs" \
   "${REPO_ROOT}/Crawl/db" \
   "${REPO_ROOT}/Crawl/static/page-shots" \
@@ -66,6 +67,7 @@ if [[ ! -f "${DB_FILE}" ]]; then
 fi
 
 [[ -w "${WORKSHOP_STATE_DIR}" ]] || fail "Workshop state directory is not writable: ${WORKSHOP_STATE_DIR}"
+[[ -w "${AGENT_DATA_HOST_ROOT}" ]] || fail "Agent data host root is not writable: ${AGENT_DATA_HOST_ROOT}"
 [[ -f "${REPO_ROOT}/Agent-Do/Dockerfile.claude" ]] || fail "Missing Claude runtime Dockerfile: ${REPO_ROOT}/Agent-Do/Dockerfile.claude"
 
 docker compose -f "${SCRIPT_DIR}/docker-compose.yml" --env-file "${ENV_FILE}" --profile crawler --profile edurepo config --quiet
@@ -74,6 +76,7 @@ ok "Docker daemon is available."
 ok "Required backend directories exist."
 ok "SQLite path is a file: ${DB_FILE}"
 ok "Workshop state directory is writable: ${WORKSHOP_STATE_DIR}"
+ok "Agent data host root is writable: ${AGENT_DATA_HOST_ROOT}"
 ok "Claude runtime Dockerfile exists."
 ok "Compose config is valid."
 ok "Cloud preflight finished. You can run ./deploy/up.sh next."
