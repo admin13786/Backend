@@ -41,6 +41,22 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p "${SSH_PORT:-22}" -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
+      - name: Prune remote stale artifacts
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" \
+            "BACKEND_DEPLOY_PATH='${BACKEND_DEPLOY_PATH}' sh -s" <<'REMOTE'
+          set -eu
+
+          BACKEND_DEPLOY_PATH="${BACKEND_DEPLOY_PATH:-/data/projects/Backend/deploy}"
+          BACKEND_ROOT="$(dirname "$BACKEND_DEPLOY_PATH")"
+
+          rm -rf \
+            "$BACKEND_ROOT/OpenMAIC/assets" \
+            "$BACKEND_ROOT/generatePicture"
+
+          find "$BACKEND_ROOT" -type f \( -name '*.tmp' -o -name '*.swp' \) -delete
+          REMOTE
+
       - name: Upload backend source
         run: |
           tar \
@@ -55,7 +71,9 @@ jobs:
             --exclude='EduRepo/backend/data' \
             --exclude='OpenMAIC/.env.local' \
             --exclude='OpenMAIC/data' \
+            --exclude='OpenMAIC/assets' \
             --exclude='WorkShop/state' \
+            --exclude='generatePicture' \
             --exclude='**/__pycache__' \
             --exclude='**/.venv' \
             --exclude='**/node_modules' \
