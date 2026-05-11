@@ -125,4 +125,16 @@ jobs:
           ./up.sh --force-recreate crawl-api agent-do workshop openmaic
 
           docker compose ps crawl-api agent-do workshop openmaic || true
+
+          for attempt in $(seq 1 30); do
+            if curl -fsS "http://127.0.0.1:${OPENMAIC_PORT:-3000}/api/health" >/dev/null; then
+              echo "OpenMAIC health check passed."
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "OpenMAIC health check failed." >&2
+          docker compose logs --tail 80 openmaic >&2 || true
+          exit 1
           REMOTE
