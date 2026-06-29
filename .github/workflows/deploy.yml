@@ -61,6 +61,7 @@ jobs:
 
           BACKEND_DEPLOY_PATH="${BACKEND_DEPLOY_PATH:-/data/projects/Backend/deploy}"
           BACKEND_ROOT="$(dirname "$BACKEND_DEPLOY_PATH")"
+          mkdir -p "$BACKEND_ROOT"
 
           rm -rf \
             "$BACKEND_ROOT/OpenMAIC/assets" \
