@@ -28,18 +28,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build OpenMAIC image
-        run: |
-          docker build \
-            --build-arg NODE_IMAGE=node:22-alpine3.19 \
-            --build-arg APK_MIRROR=mirrors.aliyun.com \
-            --build-arg NPM_REGISTRY=https://registry.npmmirror.com \
-            --build-arg NEXT_TELEMETRY_DISABLED=1 \
-            --build-arg OPENMAIC_NODE_OPTIONS=--max-old-space-size=768 \
-            -t aiedu-openmaic:latest \
-            -f OpenMAIC/Dockerfile \
-            OpenMAIC
-
       - name: Validate secrets
         run: |
           test -n "$SSH_HOST"
@@ -69,11 +57,6 @@ jobs:
 
           find "$BACKEND_ROOT" -type f \( -name '*.tmp' -o -name '*.swp' \) -delete
           REMOTE
-
-      - name: Load OpenMAIC image to server
-        run: |
-          docker save aiedu-openmaic:latest | gzip -1 | ssh -i ~/.ssh/deploy_key -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" \
-            "gunzip | docker load"
 
       - name: Upload backend source
         run: |
@@ -108,7 +91,7 @@ jobs:
       - name: Deploy backend services
         run: |
           ssh -i ~/.ssh/deploy_key -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" \
-            "BACKEND_DEPLOY_PATH='${BACKEND_DEPLOY_PATH}' OPENMAIC_PUBLIC_ORIGIN_OVERRIDE='http://${SSH_HOST}:3000' OPENMAIC_NODE_OPTIONS_OVERRIDE='--max-old-space-size=768' OPENMAIC_SKIP_BUILD_OVERRIDE='1' DEPLOY_SWAP_SIZE_MB_OVERRIDE='8192' bash -s" <<'REMOTE'
+            "BACKEND_DEPLOY_PATH='${BACKEND_DEPLOY_PATH}' OPENMAIC_PUBLIC_ORIGIN_OVERRIDE='http://${SSH_HOST}:3000' OPENMAIC_NODE_OPTIONS_OVERRIDE='--max-old-space-size=768' DEPLOY_SWAP_SIZE_MB_OVERRIDE='8192' bash -s" <<'REMOTE'
           set -euo pipefail
 
           BACKEND_DEPLOY_PATH="${BACKEND_DEPLOY_PATH:-/data/projects/Backend/deploy}"
