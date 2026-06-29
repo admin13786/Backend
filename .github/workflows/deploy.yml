@@ -19,9 +19,9 @@ jobs:
     env:
       SSH_HOST: ${{ secrets.SERVER_HOST }}
       SSH_USER: ${{ secrets.SERVER_USER }}
-      SSH_PORT: ${{ secrets.SERVER_PORT }}
+      SSH_PORT: "22"
       SSH_KEY: ${{ secrets.SERVER_PRIVATE_KEY }}
-      BACKEND_DEPLOY_PATH: ${{ secrets.BACKEND_DEPLOY_PATH }}
+      BACKEND_DEPLOY_PATH: /data/projects/Backend/deploy
       BACKEND_ENV_FILE: ${{ secrets.BACKEND_ENV_FILE }}
 
     steps:
@@ -149,5 +149,5 @@ jobs:
             sleep 2
           done
 
-          echo "Public OpenMAIC endpoint check failed. Check the Alibaba Cloud security group/firewall for TCP 3000." >&2
+          echo "Public OpenMAIC endpoint check failed. Check the Tencent Cloud security group/firewall for TCP 3000." >&2
           exit 1
