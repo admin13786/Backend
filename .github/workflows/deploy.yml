@@ -19,9 +19,9 @@ jobs:
     env:
       SSH_HOST: ${{ secrets.SERVER_HOST }}
       SSH_USER: ${{ secrets.SERVER_USER }}
-      SSH_PORT: ${{ secrets.SERVER_PORT }}
+      SSH_PORT: "22"
       SSH_KEY: ${{ secrets.SERVER_PRIVATE_KEY }}
-      BACKEND_DEPLOY_PATH: ${{ secrets.BACKEND_DEPLOY_PATH }}
+      BACKEND_DEPLOY_PATH: /data/projects/Backend/deploy
       BACKEND_ENV_FILE: ${{ secrets.BACKEND_ENV_FILE }}
 
     steps:
@@ -41,6 +41,23 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p "${SSH_PORT:-22}" -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
+      - name: Prune remote stale artifacts
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" \
+            "BACKEND_DEPLOY_PATH='${BACKEND_DEPLOY_PATH}' sh -s" <<'REMOTE'
+          set -eu
+
+          BACKEND_DEPLOY_PATH="${BACKEND_DEPLOY_PATH:-/data/projects/Backend/deploy}"
+          BACKEND_ROOT="$(dirname "$BACKEND_DEPLOY_PATH")"
+          mkdir -p "$BACKEND_ROOT"
+
+          rm -rf \
+            "$BACKEND_ROOT/OpenMAIC/assets" \
+            "$BACKEND_ROOT/generatePicture"
+
+          find "$BACKEND_ROOT" -type f \( -name '*.tmp' -o -name '*.swp' \) -delete
+          REMOTE
+
       - name: Upload backend source
         run: |
           tar \
@@ -55,7 +72,9 @@ jobs:
             --exclude='EduRepo/backend/data' \
             --exclude='OpenMAIC/.env.local' \
             --exclude='OpenMAIC/data' \
+            --exclude='OpenMAIC/assets' \
             --exclude='WorkShop/state' \
+            --exclude='generatePicture' \
             --exclude='**/__pycache__' \
             --exclude='**/.venv' \
             --exclude='**/node_modules' \
@@ -72,7 +91,7 @@ jobs:
       - name: Deploy backend services
         run: |
           ssh -i ~/.ssh/deploy_key -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" \
-            "BACKEND_DEPLOY_PATH='${BACKEND_DEPLOY_PATH}' OPENMAIC_PUBLIC_ORIGIN_OVERRIDE='http://${SSH_HOST}:3000' OPENMAIC_NODE_OPTIONS_OVERRIDE='--max-old-space-size=1024' bash -s" <<'REMOTE'
+            "BACKEND_DEPLOY_PATH='${BACKEND_DEPLOY_PATH}' OPENMAIC_PUBLIC_ORIGIN_OVERRIDE='http://${SSH_HOST}:3000' OPENMAIC_NODE_OPTIONS_OVERRIDE='--max-old-space-size=768' DEPLOY_SWAP_SIZE_MB_OVERRIDE='8192' bash -s" <<'REMOTE'
           set -euo pipefail
 
           BACKEND_DEPLOY_PATH="${BACKEND_DEPLOY_PATH:-/data/projects/Backend/deploy}"
@@ -90,4 +109,29 @@ jobs:
           ./up.sh --force-recreate crawl-api agent-do workshop openmaic
 
           docker compose ps crawl-api agent-do workshop openmaic || true
+
+          for attempt in $(seq 1 30); do
+            if curl -fsS "http://127.0.0.1:${OPENMAIC_PORT:-3000}/api/health" >/dev/null; then
+              echo "OpenMAIC health check passed."
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "OpenMAIC health check failed." >&2
+          docker compose logs --tail 80 openmaic >&2 || true
+          exit 1
           REMOTE
+
+      - name: Verify public OpenMAIC endpoint
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl -fsS "http://${SSH_HOST}:3000/api/health" >/dev/null; then
+              echo "Public OpenMAIC endpoint check passed."
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "Public OpenMAIC endpoint check failed. Check the Tencent Cloud security group/firewall for TCP 3000." >&2
+          exit 1

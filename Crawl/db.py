@@ -16,7 +16,7 @@ from datetime import datetime
 
 from env_loader import load_crawl_env
 from tz_display import batch_ts_suffix
-from typing import List, Dict, Optional
+from typing import Any, Dict, List, Optional, Sequence
 from url_utils import normalize_article_url
 
 # 默认数据库文件放在 Crawl/db 目录；可通过环境变量覆盖
@@ -138,6 +138,15 @@ async def init_db():
             rank INTEGER DEFAULT 0,
             crawl_batch TEXT DEFAULT '',
             published_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    await _conn.execute("""
+        CREATE TABLE IF NOT EXISTS news_chat_sessions (
+            id TEXT PRIMARY KEY,
+            title TEXT DEFAULT '',
+            data_json TEXT DEFAULT '[]',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -767,6 +776,158 @@ async def get_article_by_id(article_id: int) -> Optional[Dict]:
         return None
     columns = [description[0] for description in cursor.description]
     return dict(zip(columns, row))
+
+
+async def search_news_articles(
+    query: str = "",
+    source_keys: Optional[Sequence[str]] = None,
+    days: Optional[int] = None,
+    limit: int = 40,
+) -> List[Dict[str, Any]]:
+    """Return candidate articles using lightweight hybrid filtering."""
+    if not _conn:
+        return []
+
+    clauses = []
+    params: List[Any] = []
+
+    normalized_sources = [
+        str(item or "").strip()
+        for item in (source_keys or [])
+        if str(item or "").strip()
+    ]
+    if normalized_sources:
+        placeholders = ",".join("?" for _ in normalized_sources)
+        clauses.append(f"source_key IN ({placeholders})")
+        params.extend(normalized_sources)
+
+    if days is not None and days > 0:
+        clauses.append("julianday('now') - julianday(COALESCE(published_at, created_at)) <= ?")
+        params.append(int(days))
+
+    tokens = []
+    for raw in re.split(r"[^0-9A-Za-z\u4e00-\u9fff]+", str(query or "")):
+        token = raw.strip()
+        if len(token) >= 2:
+            tokens.append(token)
+    token_clauses = []
+    for token in tokens[:8]:
+        like = f"%{token.lower()}%"
+        token_clauses.append(
+            "("
+            "lower(title) LIKE ? OR lower(summary) LIKE ? OR lower(content) LIKE ? OR "
+            "lower(source) LIKE ? OR lower(source_key) LIKE ?"
+            ")"
+        )
+        params.extend([like, like, like, like, like])
+    if token_clauses:
+        clauses.append("(" + " OR ".join(token_clauses) + ")")
+
+    where_sql = ""
+    if clauses:
+        where_sql = "WHERE " + " AND ".join(clauses)
+
+    sql = f"""
+        SELECT
+            id, title, url, cover_url, summary, source, source_key, content,
+            total_score, ai_relevance, industry_impact, spread_heat, timeliness,
+            content_quality, readability, rank, crawl_batch, published_at,
+            created_at, updated_at, brief_json
+        FROM news_articles
+        {where_sql}
+        ORDER BY COALESCE(total_score, 0) DESC, COALESCE(spread_heat, 0) DESC, published_at DESC, id DESC
+        LIMIT ?
+    """
+    cursor = await _conn.execute(sql, (*params, max(1, int(limit))))
+    rows = await cursor.fetchall()
+    columns = [description[0] for description in cursor.description]
+    return [dict(zip(columns, row)) for row in rows]
+
+
+async def get_news_chat_session(session_id: str) -> Optional[Dict[str, Any]]:
+    if not _conn:
+        return None
+    session_id = str(session_id or "").strip()
+    if not session_id:
+        return None
+    cursor = await _conn.execute(
+        """
+        SELECT id, title, data_json, created_at, updated_at
+        FROM news_chat_sessions
+        WHERE id = ?
+        LIMIT 1
+        """,
+        (session_id,),
+    )
+    row = await cursor.fetchone()
+    if not row:
+        return None
+    columns = [description[0] for description in cursor.description]
+    data = dict(zip(columns, row))
+    try:
+        data["data_json"] = json.loads(data.get("data_json") or "[]")
+    except Exception:
+        data["data_json"] = []
+    return data
+
+
+async def upsert_news_chat_session(
+    session_id: str,
+    title: str = "",
+    data_json: Optional[List[Dict[str, Any]]] = None,
+) -> Dict[str, Any]:
+    if not _conn:
+        raise RuntimeError("database not initialized")
+
+    session_id = str(session_id or "").strip()
+    if not session_id:
+        raise ValueError("missing session_id")
+
+    safe_title = str(title or "").strip()
+    payload = json.dumps(data_json or [], ensure_ascii=False)
+    await _conn.execute(
+        """
+        INSERT INTO news_chat_sessions (id, title, data_json, updated_at)
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(id) DO UPDATE SET
+            title = excluded.title,
+            data_json = excluded.data_json,
+            updated_at = CURRENT_TIMESTAMP
+        """,
+        (session_id, safe_title, payload),
+    )
+    await _conn.commit()
+    return {
+        "id": session_id,
+        "title": safe_title,
+        "data_json": data_json or [],
+    }
+
+
+async def list_news_chat_sessions(limit: int = 20) -> List[Dict[str, Any]]:
+    if not _conn:
+        return []
+
+    cursor = await _conn.execute(
+        """
+        SELECT id, title, data_json, created_at, updated_at
+        FROM news_chat_sessions
+        ORDER BY updated_at DESC, created_at DESC
+        LIMIT ?
+        """,
+        (max(1, int(limit)),),
+    )
+    rows = await cursor.fetchall()
+    columns = [description[0] for description in cursor.description]
+    result = []
+    for row in rows:
+        item = dict(zip(columns, row))
+        try:
+            item["data_json"] = json.loads(item.get("data_json") or "[]")
+        except Exception:
+            item["data_json"] = []
+        result.append(item)
+    return result
 
 
 async def get_articles_by_ids(article_ids: List[int]) -> List[Dict]:

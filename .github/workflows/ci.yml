@@ -22,8 +22,12 @@ jobs:
       - name: Check Python syntax
         run: |
           python -m py_compile \
+            Crawl/chat_api.py \
+            Crawl/chat_prompts.py \
+            Crawl/chat_service.py \
             Crawl/db.py \
             Crawl/rank_api.py \
+            Crawl/retrieval_service.py \
             Crawl/run_local.py \
             WorkShop/app.py \
             WorkShop/metrics.py \

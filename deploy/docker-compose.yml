@@ -124,6 +124,7 @@ services:
     restart: unless-stopped
 
   openmaic:
+    image: ${OPENMAIC_IMAGE:-aiedu-openmaic:latest}
     build:
       context: ../OpenMAIC
       args:

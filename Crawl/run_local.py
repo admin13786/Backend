@@ -74,6 +74,7 @@ sys.stdout = TeeWriter(sys.stdout, log_file)
 sys.stderr = TeeWriter(sys.stderr, log_file)
 
 from analytics_api import analytics_router
+from chat_api import chat_router
 from news_api import news_router, scheduled_crawl
 from push_api import push_router
 from push_service import is_push_configured, send_daily_highlights_to_registered_devices
@@ -144,6 +145,8 @@ app.add_middleware(
 # Support both legacy and current API prefixes.
 app.include_router(news_router)
 app.include_router(news_router, prefix="/api")
+app.include_router(chat_router)
+app.include_router(chat_router, prefix="/api")
 app.include_router(analytics_router)
 app.include_router(push_router)
 app.include_router(rank_router)
