@@ -157,6 +157,7 @@ services:
       args:
         NODE_IMAGE: ${WEB_FRONTEND_NODE_IMAGE:-node:22-alpine}
         NGINX_IMAGE: ${WEB_FRONTEND_NGINX_IMAGE:-nginx:stable-alpine}
+        NPM_REGISTRY: ${WEB_FRONTEND_NPM_REGISTRY:-https://registry.npmmirror.com}
         VITE_API_BASE: ${FRONTEND_VITE_API_BASE:-}
         VITE_USE_MOCK: ${FRONTEND_VITE_USE_MOCK:-false}
         VITE_RANK_VIDEO_MOCK: ${FRONTEND_VITE_RANK_VIDEO_MOCK:-true}
